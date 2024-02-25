@@ -1,0 +1,7 @@
+.vs/
+AdiPluginApi
+app.config
+bin/
+obj/
+packages.config
+packages/

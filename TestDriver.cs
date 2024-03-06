@@ -75,6 +75,10 @@ namespace adiIRC_DeepL_plugin_test
             if (testPlugin.monitor_items.Count == 20) Console.WriteLine("Manual Monitor Remove Passed");
             else Console.WriteLine("Manual Monitor Remove Failed");
 
+
+            // Print help message
+            testPlugin.deepl_help(new RegisteredCommandArgs("", fuelratsChan));
+
             Console.Write("Press the any key to continue...");
             Console.Read();
 

@@ -303,16 +303,15 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="argument">keepNicks/removeNicks/drillmode</param>
         public void deepl_set(RegisteredCommandArgs argument)
         {
-
-            //TODO: change this setting to a toggle
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            if (allarguments.Equals("keepNicks"))
+            if (allarguments.Equals("autoRemoveNicks"))
             {
-                config_items.removePartingNicknames = false;
-            }
-            if (allarguments.Equals("removeNicks"))
-            {
-                config_items.removePartingNicknames = true;
+                config_items.removePartingNicknames = !config_items.removePartingNicknames;
+                // print drillmode state after switch
+                if (config_items.removePartingNicknames) adihost.ActiveIWindow.OutputText("Noncase Autoremove Enabled.");
+                else adihost.ActiveIWindow.OutputText("Noncase Autoremove Disabled.");
+
+                save_config_items();
             }
 
             if (allarguments.Equals("drillmode"))
@@ -324,7 +323,6 @@ namespace adiIRC_DeepL_plugin_test
                 if (drillmode) adihost.ActiveIWindow.OutputText("DrillMode™ Enabled!");
                 else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
-            save_config_items();
         }
 
         /// <summary>
@@ -357,7 +355,9 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/deepl-auto-case - Identifies nicknames from new cases in active channel and add them to the monitor list");
             adihost.ActiveIWindow.OutputText("/deepl-clearmon - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
             adihost.ActiveIWindow.OutputText("/deepl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/deepl-set removeNicks|keepNicks|drillmode - Configures certain behavious of the plugin. removeNicks -> autoremove monitored nicks that part the channel");
+            adihost.ActiveIWindow.OutputText("/deepl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin." +
+                "\n\tautoRemoveNicks\t-> toggles auto removal of non-case nicks when nick parts or quits" +
+                "\n\tdrillmode\t-> toggles whether to observe MechaSqeak or DrillSqueak");
             adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
             adihost.ActiveIWindow.OutputText("/deepl-help - Shows this command reference");
         }

@@ -1,7 +1,9 @@
-﻿namespace adiIRC_DeepL_plugin
+﻿/// This is a copy of the AdiIRCPlugin.cs class.
+/// It should be nearly identical, except where 
+/// public exposure is required to access functions 
+/// for testing.
+namespace adiIRC_DeepL_plugin_test
 {
-    using AdiIRCAPIv2.Interfaces;
-    using AdiIRCAPIv2.Arguments.Aliasing;
     using System;
     using System.Threading.Tasks;
     using System.Collections.Generic;
@@ -9,9 +11,13 @@
     using System.Net.Http.Headers;
     using System.Text.RegularExpressions;
     using Newtonsoft.Json;
+    /*using AdiIRCAPIv2.Interfaces;
+    using AdiIRCAPIv2.Arguments.Aliasing;
     using AdiIRCAPIv2.Arguments.Contextless;
     using AdiIRCAPIv2.Arguments.Channel;
-    using AdiIRCAPIv2.Arguments.ChannelMessages;
+    using AdiIRCAPIv2.Arguments.ChannelMessages;*/
+
+
 
     public class deepl_json_response
     {
@@ -44,7 +50,7 @@
         public string apikey;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
-
+        
         public deepl_config_items()
         {
             removePartingNicknames = false;
@@ -53,7 +59,7 @@
         }
     }
 
-    public class adiIRC_DeepL_plugin : IPlugin
+    public class adiIRC_DeepL_plugin
     {
         public string PluginName { get { return "adi_deepl"; } }
 
@@ -68,14 +74,14 @@
         private IPluginHost adihost;
         private string deepl_config_file;
         private deepl_config_items config_items;
-        private List<monitorItem> monitor_items;
-        private List<IWindow> channel_monitor_items;
-        private static bool drillmode = false;
-        
+        public List<monitorItem> monitor_items;
+        public List<IWindow> channel_monitor_items;
+        public static bool drillmode = false;
+
         /// <summary>
         /// Writes changes to deepl.conf stored in %appdatalocal%\AdiIRC
         /// </summary>
-        private void save_config_items()
+        public void save_config_items()
         {
             try
             {
@@ -91,7 +97,7 @@
         /// <summary>
         /// Reads JSON config file from %appdatalocal%\AdiIRC
         /// </summary>
-        private void load_config_items()
+        public void load_config_items()
         {
             if (System.IO.File.Exists(deepl_config_file))
             {
@@ -110,7 +116,7 @@
         /// DeepL's API is used to translate text. A free account and API key are needed to use this integration.
         /// </summary>
         /// <param name="argument">Deepl API Key</param>
-        private void set_DeepL_ApiKey(RegisteredCommandArgs argument)
+        public void set_DeepL_ApiKey(RegisteredCommandArgs argument)
         {
             try
             {
@@ -130,7 +136,7 @@
         /// <param name="lang">Target Language</param>
         /// <param name="totranslate">Message to translate</param>
         /// <returns></returns>
-        private async Task<string> deepl_translate_any(string lang, string totranslate)
+        public async Task<string> deepl_translate_any(string lang, string totranslate)
         {
             try
             {
@@ -167,7 +173,7 @@
         /// <param name="totranslate">Message to translate</param>
         /// <param name="window">Window to post message</param>
         /// <param name="fromNick">Client's nick</param>
-        private async void deepl_translate_towindow(string lang, string totranslate, IWindow window, string fromNick)
+        public async void deepl_translate_towindow(string lang, string totranslate, IWindow window, string fromNick)
         {
             window.OutputText(fromNick + ": " + await deepl_translate_any(lang, totranslate));
         }
@@ -176,7 +182,7 @@
         /// Translates any language into English
         /// </summary>
         /// <param name="argument">Message to translate</param>
-        private void deepl_en(RegisteredCommandArgs argument)
+        public void deepl_en(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             deepl_translate_towindow("EN", allarguments, argument.Window, "yourself");
@@ -186,7 +192,7 @@
         /// Helper function to parse arguments for deepl_translate_any()
         /// </summary>
         /// <param name="argument">language code, and message to translate</param>
-        private async void deepl_any(RegisteredCommandArgs argument)
+        public async void deepl_any(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string lang = allarguments.Substring(0, 2).ToUpper();
@@ -198,7 +204,7 @@
         /// Adds a user nick to translation monitor list
         /// </summary>
         /// <param name="argument">Nickname to monitor</param>
-        private void deepl_mon(RegisteredCommandArgs argument)
+        public void deepl_mon(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, argument.Window, langcode: "ZZ");
@@ -207,13 +213,14 @@
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
         }
 
+
         /// <summary>
         /// Removes a user nick from the monitor list.
         /// If the user is apart of an active case, it will blank out the case
         /// TODO: Allow removing by nick or casenum
         /// </summary>
         /// <param name="argument">Nick to remove from monitoring</param>
-        private void deepl_rm(RegisteredCommandArgs argument)
+        public void deepl_rm(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             int index;
@@ -222,14 +229,14 @@
                     monitor_items[index] = null; //space reserved for cases, just null out
                 else
                     monitor_items.RemoveAt(index); //manually entered monitor
-            }
+             }
         }
 
         /// <summary>
         /// Adds current channel into list of channels for monitoring
         /// </summary>
         /// <param name="argument">Current Channel</param>
-        private void deepl_auto_case(RegisteredCommandArgs argument)
+        public void deepl_auto_case(RegisteredCommandArgs argument)
         {
             if (!channel_monitor_items.Contains(argument.Window))
             {
@@ -241,7 +248,7 @@
         /// Clears all monitoring
         /// </summary>
         /// <param name="argument">no args</param>
-        private void deepl_clearmon(RegisteredCommandArgs argument)
+        public void deepl_clearmon(RegisteredCommandArgs argument)
         {
             monitor_items = new List<monitorItem>();
             for (int i = 0; i < 10; i++)
@@ -255,7 +262,7 @@
         /// Useful if the rat speaks multiple languages
         /// </summary>
         /// <param name="argument">no args</param>
-        private void deepl_exclude(RegisteredCommandArgs argument)
+        public void deepl_exclude(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string langcode = allarguments.ToUpper();
@@ -273,7 +280,7 @@
         /// drillmode - toggles between listening for MechaSqueak or DrillSqueak
         /// </summary>
         /// <param name="argument">keepNicks/removeNicks/drillmode</param>
-        private void deepl_set(RegisteredCommandArgs argument)
+        public void deepl_set(RegisteredCommandArgs argument)
         {
 
             //TODO: change this setting to a toggle
@@ -303,7 +310,7 @@
         /// Prints list of monitored nicks, and channels
         /// </summary>
         /// <param name="argument">no args</param>
-        private void deepl_debug(RegisteredCommandArgs argument)
+        public void deepl_debug(RegisteredCommandArgs argument)
         {
             int index = 0;
             foreach (monitorItem item in monitor_items)
@@ -318,7 +325,7 @@
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
         }
 
-        private void deepl_help(RegisteredCommandArgs argument)
+        public void deepl_help(RegisteredCommandArgs argument)
         {
             adihost.ActiveIWindow.OutputText("AdiIRC Deepl Plugin Command Reference");
             adihost.ActiveIWindow.OutputText("/deepl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
@@ -341,7 +348,7 @@
         /// user's message.
         /// </summary>
         /// <param name="message"></param>
-        private void OnChannelNormalMessage(ChannelNormalMessageArgs message)
+        public void OnChannelNormalMessage(ChannelNormalMessageArgs message)
         {
             IChannel channel = message.Channel;
 
@@ -369,6 +376,7 @@
                         {
                             string langcode = match.Groups["langcode"].Value.ToUpper();
 
+                            //channel.OutputText("Case number: " + caseNum);
                             //channel.OutputText("Langcode success: " + langcode);
                             int caseNum;
                             if (int.TryParse(match.Groups["caseNum"].Value, out caseNum))
@@ -396,7 +404,7 @@
                                 }
                             }
                         }
-
+                        
                     }
                 }
             }
@@ -463,7 +471,7 @@
         /// When a user changes their Nick, check if the monitoring needs to be updated
         /// </summary>
         /// <param name="nickArgs"></param>
-        private void OnNick(NickArgs nickArgs)
+        public void OnNick(NickArgs nickArgs)
         {
             int index;
             if (IsNickMonitored(nickArgs.User.Nick, out index))
@@ -476,23 +484,24 @@
         /// Cases will get naturally overwritten as new cases with the same casenumber come in
         /// </summary>
         /// <param name="quitArgs">Nick to check</param>
-        private void OnQuit(QuitArgs quitArgs)
+        public void OnQuit(QuitArgs quitArgs)
         {
             if (config_items.removePartingNicknames)
             {
                 int index;
                 if (IsNickMonitored(quitArgs.User.Nick, out index))
-                    if (index > 19)
+                    if (index > 9)
                         monitor_items.RemoveAt(index);
             }
         }
+
         /// <summary>
         /// When a user /parts, check if we need to stop monitoring
         /// Only autoremoves manually added nicks(use /deepl-rm to force remove a case)
         /// Cases will get naturally overwritten as new cases with the same casenumber come in
         /// </summary>
         /// <param name="partArgs">Nick to check</param>
-        private void OnChannelPart(ChannelPartArgs partArgs) 
+        public void OnChannelPart(ChannelPartArgs partArgs) 
         {
             if (config_items.removePartingNicknames)
             {
@@ -519,7 +528,7 @@
                 monitor_items.Add(null);
             channel_monitor_items = new List<IWindow>();
             load_config_items();
-            adihost.HookCommand("/deepl-api", set_DeepL_ApiKey);
+            /*adihost.HookCommand("/deepl-api", set_DeepL_ApiKey);
             adihost.HookCommand("/deepl-en", deepl_en);
             adihost.HookCommand("/deepl-any", deepl_any);
             adihost.HookCommand("/deepl-mon", deepl_mon);
@@ -533,7 +542,7 @@
             adihost.OnChannelNormalMessage += OnChannelNormalMessage;
             adihost.OnNick += OnNick;
             adihost.OnQuit += OnQuit;
-            adihost.OnChannelPart += OnChannelPart;
+            adihost.OnChannelPart += OnChannelPart;*/
         }
     }
 }

@@ -223,13 +223,34 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_rm(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
+
             int index;
-            if (IsNickMonitored(allarguments, out index)) {
-                if (index < 20)
-                    monitor_items[index] = null; //space reserved for cases, just null out
+            if (int.TryParse(allarguments, out index))
+            {
+                if (index < monitor_items.Count)
+                {
+                    monitor_items[index] = null;
+                }
                 else
-                    monitor_items.RemoveAt(index); //manually entered monitor
-             }
+                    adihost.ActiveIWindow.OutputText("Could not find case #" + allarguments + " in monitor list.");
+            }
+            else if (IsNickMonitored(allarguments, out index))
+            {
+                //remove a case
+                if (index < 20) //0-19 index range reserved for cases, just null out
+                {
+                    monitor_items[index] = null;
+                }
+                //remove a nick
+                else
+                {
+                    monitor_items.RemoveAt(index);
+                }
+            }
+            else
+            {
+                adihost.ActiveIWindow.OutputText("Could not find Nick \"" + allarguments + "\" in monitor list.");
+            }
         }
 
         /// <summary>
@@ -332,7 +353,7 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/deepl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/deepl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
             adihost.ActiveIWindow.OutputText("/deepl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/deepl-rm <nickname> - Removes a single nickname from the monitor list.");
+            adihost.ActiveIWindow.OutputText("/deepl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
             adihost.ActiveIWindow.OutputText("/deepl-auto-case - Identifies nicknames from new cases in active channel and add them to the monitor list");
             adihost.ActiveIWindow.OutputText("/deepl-clearmon - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
             adihost.ActiveIWindow.OutputText("/deepl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");

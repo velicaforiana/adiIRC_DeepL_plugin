@@ -56,7 +56,7 @@ namespace adiIRC_DeepL_plugin_test
 
 
             // Test case remove
-            testPlugin.deepl_rm(new RegisteredCommandArgs("IBZZ", fuelratsChan));
+            testPlugin.deepl_rm(new RegisteredCommandArgs("3", fuelratsChan));
             // test case 3 should be null, and test case 5 should be unaffected
             if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5].nickname.Equals("zzammaxx")) Console.WriteLine("Case Remove Passed");
             else Console.WriteLine("Case Remove Failed");

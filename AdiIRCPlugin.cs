@@ -44,14 +44,12 @@
         public string apikey;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
-        public bool drillmode; // If true, we are monitoring DrillSqueak instead of MechaSqueak
 
         public deepl_config_items()
         {
             removePartingNicknames = false;
             apikey = "";
             lang_no_translation = new List<string>();
-            drillmode = false;
         }
     }
 
@@ -72,6 +70,7 @@
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
         private List<IWindow> channel_monitor_items;
+        private static bool drillmode = false;
         
         /// <summary>
         /// Writes changes to deepl.conf stored in %appdatalocal%\AdiIRC
@@ -211,8 +210,9 @@
         /// <summary>
         /// Removes a user nick from the monitor list.
         /// If the user is apart of an active case, it will blank out the case
+        /// TODO: Allow removing by nick or casenum
         /// </summary>
-        /// <param name="argument"></param>
+        /// <param name="argument">Nick to remove from monitoring</param>
         private void deepl_rm(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
@@ -289,11 +289,12 @@
 
             if (allarguments.Equals("drillmode"))
             {
-                config_items.drillmode = !config_items.drillmode;
+                // this config should only be in memory, not saved to deepl.conf
+                drillmode = !drillmode;
 
                 // print drillmode state after switch
-                if (config_items.drillmode) adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
-                else adihost.ActiveIWindow.OutputText("DrillMode™ Enabled!");
+                if (drillmode) adihost.ActiveIWindow.OutputText("DrillMode™ Enabled!");
+                else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
             save_config_items();
         }
@@ -314,6 +315,7 @@
             {
                 adihost.ActiveIWindow.OutputText("Monitored Channel: " + window.Name);
             }
+            adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
         }
 
         private void deepl_help(RegisteredCommandArgs argument)
@@ -332,18 +334,29 @@
             adihost.ActiveIWindow.OutputText("/deepl-help - Shows this command reference");
         }
 
+        /// <summary>
+        /// Whenever a message comes in, this function will check if it's from Mecha/DrillSqueak
+        /// or it will check if the message is from a monitored user. It will either create a new
+        /// case entry if Mecha/Drill is posting a Ratsignal, or it will translate the monitored
+        /// user's message.
+        /// </summary>
+        /// <param name="message"></param>
         private void OnChannelNormalMessage(ChannelNormalMessageArgs message)
         {
             IChannel channel = message.Channel;
 
             // If Mecha or DrillSqueak say anyting
             string botName = "MechaSqueak[BOT]";
-            if (config_items.drillmode) botName = "DrillSqueak[BOT]";
+            if (drillmode) botName = "DrillSqueak[BOT]";
+            //channel.OutputText(message.User.Nick);
+            //channel.OutputText(botName);
             if (message.User.Nick.Equals(botName))
             {
                 // If channel is being monitored
+                //channel.OutputText("Matched Bot");
                 if (channel_monitor_items.Contains(channel))
                 {
+                    //channel.OutputText("Matched Channel");
                     // Identify Ratsignal or Drillsignal
                     string stripped = Regex.Replace(message.Message, @"(\x03(?:\d{1,2}(?:,\d{1,2})?)?)|\x02|\x0F|\x16|\x1F", "");
                     Regex regex = new Regex(@"(RAT|DRILL)SIGNAL Case #(?<caseNum>\d+) (PC)? ?(?<platform>ODY|HOR|LEG|Playstation|Xbox).*CMDR (?<cmdr>.+) – System: .* Language: .+ \((?<langcode>[a-z]{2})(?:-\w{2,3})?\)(?: – Nick: (?<nickname>[\w\[\]\^-{|}]+))?.?(?:\((?:ODY|HOR|LEG|XB|PS)_SIGNAL\))?");
@@ -356,13 +369,15 @@
                         {
                             string langcode = match.Groups["langcode"].Value.ToUpper();
 
-                            //channel.OutputText("Case number: " + caseNum);
                             //channel.OutputText("Langcode success: " + langcode);
                             int caseNum;
                             if (int.TryParse(match.Groups["caseNum"].Value, out caseNum))
                             {
                                 // cmdr name should always match, nick is only present if different from cmdr name.
                                 string cmdr = match.Groups["cmdr"].Value;
+
+                                //channel.OutputText("Case number: " + caseNum);
+                                //channel.OutputText("Cmdr: " + cmdr);
 
                                 // if Fuel Rats is absurdly busy
                                 if (caseNum >= monitor_items.Count)

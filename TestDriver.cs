@@ -59,6 +59,21 @@ namespace adiIRC_DeepL_plugin_test
             PrintTestResult("EN Rsig Autodetect", testResult);
 
 
+            // Test Xbox RSignal with (Offline) by cmdr name
+            rsig = "RATSIGNAL Case #7 Xbox – CMDR Delrat (Offline) – System: \"LHS 2191\" (Invalid system name) – Language: English (United States) (en-US) (XB_SIGNAL)";
+            // Create example mecha rsig message
+            ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
+            ratsignal.User.Nick = "MechaSqueak[BOT]";
+            testPlugin.deepl_auto_case(new RegisteredCommandArgs("", fuelratsChan));
+            testPlugin.OnChannelNormalMessage(ratsignal);
+
+            // Check if case was onboarded into correct monitor_items slot
+            if (testPlugin.monitor_items[7] != null &&
+                testPlugin.monitor_items[7].nickname.Equals("Delrat")) testResult = true;
+            else testResult = false;
+            PrintTestResult("XBox Rsig Autodetect", testResult);
+
+
 
             // Test RU ratsignal
             rsig = "RATSIGNAL Case #5 PC HOR – CMDR Delryn – System: \"SECTOR RU-C A14 - 2\" (Unconfirmed) – Language: Russian (Russia) (ru-RU) (HOR_SIGNAL)";
@@ -78,7 +93,7 @@ namespace adiIRC_DeepL_plugin_test
             // Test case remove
             testPlugin.deepl_rm(new RegisteredCommandArgs("3", fuelratsChan));
             // test case 3 should be null, and test case 5 should be unaffected
-            if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5].nickname.Equals("Delryn")) testResult = true;
+            if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5] != null && testPlugin.monitor_items[5].nickname.Equals("Delryn")) testResult = true;
             else testResult = false;
             PrintTestResult("Case Number Removed", testResult);
 

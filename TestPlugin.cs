@@ -73,7 +73,7 @@ namespace adiIRC_DeepL_plugin_test
 
         private IPluginHost adihost;
         private string deepl_config_file;
-        private deepl_config_items config_items;
+        public deepl_config_items config_items;
         public List<monitorItem> monitor_items;
         public List<IWindow> channel_monitor_items;
         public static bool drillmode = false;
@@ -192,7 +192,7 @@ namespace adiIRC_DeepL_plugin_test
         /// Helper function to parse arguments for deepl_translate_any()
         /// </summary>
         /// <param name="argument">language code, and message to translate</param>
-        public async void deepl_any(RegisteredCommandArgs argument)
+        public async Task deepl_any(RegisteredCommandArgs argument) // for testing, return Task so we can await the completion of this function
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string lang = allarguments.Substring(0, 2).ToUpper();

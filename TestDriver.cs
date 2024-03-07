@@ -16,7 +16,7 @@ namespace adiIRC_DeepL_plugin_test
         ///     Implement DeepL API Access
         /// </summary>
         /// <param name="args"></param>
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             adiIRC_DeepL_plugin testPlugin = new adiIRC_DeepL_plugin();
             IChannel fuelratsChan = new IChannel();
@@ -24,7 +24,17 @@ namespace adiIRC_DeepL_plugin_test
             IPluginHost pluginHost = new IPluginHost(fuelratsChan, ".\\");
             testPlugin.Initialize(pluginHost);
 
+            //If API key is not saved, prompt user for key
+            if(testPlugin.config_items.apikey == "") {
+                Console.WriteLine("Input DeepL API Key: ");
+                testPlugin.config_items.apikey = Console.ReadLine();
+                testPlugin.save_config_items();
+            }
 
+            // Test deepl-any call
+            // TODO: error handle API functions, and make unit tests
+            await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
+            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
 
             // Test basic EN ratsignal
             string rsig = "RATSIGNAL Case #3 PC HOR – CMDR IBZZ – System: \"TASCHETER SECTOR QN - T A3 - 1\" (Brown dwarf 79.9 LY from Sol) – Language: English (United Kingdom) (en-GB) (HOR_SIGNAL)";
@@ -77,7 +87,7 @@ namespace adiIRC_DeepL_plugin_test
 
 
             // Print help message
-            testPlugin.deepl_help(new RegisteredCommandArgs("", fuelratsChan));
+            //testPlugin.deepl_help(new RegisteredCommandArgs("", fuelratsChan));
 
             Console.Write("Press the any key to continue...");
             Console.Read();

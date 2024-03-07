@@ -31,9 +31,12 @@ namespace adiIRC_DeepL_plugin_test
                 testPlugin.save_config_items();
             }
 
+
+            bool testResult = false;
+
             // Test deepl-any call
             // TODO: error handle API functions, and make unit tests
-            await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
+            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
             //await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
 
             // Test basic EN ratsignal
@@ -45,9 +48,10 @@ namespace adiIRC_DeepL_plugin_test
             testPlugin.OnChannelNormalMessage(ratsignal);
 
             // Check if case was onboarded into correct monitor_items slot
-            if (testPlugin.monitor_items[3] != null && 
-                testPlugin.monitor_items[3].nickname.Equals("IBZZ")) Console.WriteLine("EN Rsig Autodetect Passed");
-            else Console.WriteLine("EN Rsig Autodetect Failed");
+            if (testPlugin.monitor_items[3] != null &&
+                testPlugin.monitor_items[3].nickname.Equals("IBZZ")) testResult = true;
+            else testResult = false;
+            PrintTestResult("EN Rsig Autodetect", testResult);
 
 
 
@@ -61,29 +65,33 @@ namespace adiIRC_DeepL_plugin_test
             // Check if case was onboarded into correct monitor_items slot
             if (testPlugin.monitor_items[5] != null && 
                 testPlugin.monitor_items[5].nickname.Equals("zzammaxx") &&
-                testPlugin.monitor_items[5].langcode.Equals("RU")) Console.WriteLine("RU Rsig Autodetect Passed");
-            else Console.WriteLine("RU Rsig Autodetect Failed");
+                testPlugin.monitor_items[5].langcode.Equals("RU")) testResult = true;
+            else testResult = false;
+            PrintTestResult("RU Rsig Autodetect", testResult);
 
 
             // Test case remove
             testPlugin.deepl_rm(new RegisteredCommandArgs("3", fuelratsChan));
             // test case 3 should be null, and test case 5 should be unaffected
-            if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5].nickname.Equals("zzammaxx")) Console.WriteLine("Case Remove Passed");
-            else Console.WriteLine("Case Remove Failed");
+            if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5].nickname.Equals("zzammaxx")) testResult = true;
+            else testResult = false;
+            PrintTestResult("ECase Remove", testResult);
 
 
             // Test manual monitoring
             testPlugin.deepl_mon(new RegisteredCommandArgs("JaneDoe", fuelratsChan));
             if (testPlugin.monitor_items[20] != null &&
                 testPlugin.monitor_items[20].nickname.Equals("JaneDoe") &&
-                testPlugin.monitor_items[20].langcode.Equals("ZZ")) Console.WriteLine("Manual Monitor Add Passed");
-            else Console.WriteLine("Manual Monitor Add Failed");
+                testPlugin.monitor_items[20].langcode.Equals("ZZ")) testResult = true;
+            else testResult = false;
+            PrintTestResult("Manual Monitor Add", testResult);
 
 
             // Test manual remove
             testPlugin.deepl_rm(new RegisteredCommandArgs("JaneDoe", fuelratsChan));
-            if (testPlugin.monitor_items.Count == 20) Console.WriteLine("Manual Monitor Remove Passed");
-            else Console.WriteLine("Manual Monitor Remove Failed");
+            if (testPlugin.monitor_items.Count == 20) testResult = true;
+            else testResult = false;
+            PrintTestResult("Manual Monitor Remove", testResult);
 
 
             // Print help message
@@ -92,6 +100,27 @@ namespace adiIRC_DeepL_plugin_test
             Console.Write("Press the any key to continue...");
             Console.Read();
 
+        }
+
+        public static void PrintTestResult(string testName, bool passed)
+        {
+
+            if (passed)
+            {
+                Console.BackgroundColor = ConsoleColor.Green;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write("PASS");
+            }
+            else
+            {
+                Console.BackgroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write("FAILED");
+            }
+
+
+            Console.ResetColor();
+            Console.WriteLine(" - " +testName);
         }
     }
 }

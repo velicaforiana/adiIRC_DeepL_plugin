@@ -171,15 +171,19 @@
                     {
                         deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(await response.Content.ReadAsStringAsync());
                         int index;
-                        if (!string.IsNullOrEmpty(nick) && jsonResponse.translations[0].detected_source_language.Equals("EN") &&
-                            IsNickMonitored(nick, out index))
+                        if (IsNickMonitored(nick, out index))
                         {
-                            monitor_items[index].retries++;
-                            if (monitor_items[index].retries >= 3)
+                            if (!string.IsNullOrEmpty(nick) && jsonResponse.translations[0].detected_source_language.Equals("EN"))
                             {
-                                monitor_items[index].langcode = "EN";
-                                PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
+                                monitor_items[index].retries++;
+                                if (monitor_items[index].retries >= 3)
+                                {
+                                    monitor_items[index].langcode = "EN";
+                                    PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
+                                }
                             }
+                            else
+                                monitor_items[index].retries = 0;
                         }
                         return jsonResponse.translations[0].text;
                     }

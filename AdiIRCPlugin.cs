@@ -71,7 +71,27 @@
         private List<monitorItem> monitor_items;
         private List<IWindow> channel_monitor_items;
         private static bool drillmode = false;
+        private static bool debugmode = false;
         
+        /// <summary>
+        /// If debugmode = true, print the message to the active window
+        /// </summary>
+        /// <param name="message">Message to print</param>
+        private void PrintDebug(string message)
+        {
+            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + message);
+        }
+
+        /// <summary>
+        /// If debugmode = true, print the message to the active window
+        /// This overload will do string.Format()
+        /// </summary>
+        /// <param name="message">Formattable message to print</param>
+        /// <param name="formatArgs">Strings to insert into formattable message</param>
+        private void PrintDebug(string message, params string[] formatArgs)
+        {
+            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + string.Format(message, formatArgs));
+        }
         /// <summary>
         /// Writes changes to deepl.conf stored in %appdatalocal%\AdiIRC
         /// </summary>
@@ -80,7 +100,7 @@
             try
             {
                 System.IO.File.WriteAllText(deepl_config_file, JsonConvert.SerializeObject(config_items));
-                adihost.ActiveIWindow.OutputText("Saved Configs to: " + deepl_config_file);
+                PrintDebug("Saved Configs to: " + deepl_config_file);
             }
             catch (Exception e)
             {
@@ -210,18 +230,36 @@
         /// <summary>
         /// Removes a user nick from the monitor list.
         /// If the user is apart of an active case, it will blank out the case
-        /// TODO: Allow removing by nick or casenum
         /// </summary>
         /// <param name="argument">Nick to remove from monitoring</param>
         private void deepl_rm(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
+
             int index;
-            if (IsNickMonitored(allarguments, out index)) {
-                if (index < 20)
-                    monitor_items[index] = null; //space reserved for cases, just null out
+            if (int.TryParse(allarguments, out index))
+            {
+                if (index < monitor_items.Count)
+                {
+                    monitor_items[index] = null;
+                }
                 else
-                    monitor_items.RemoveAt(index); //manually entered monitor
+                    adihost.ActiveIWindow.OutputText("Could not find case #" + allarguments + " in monitor list.");
+            }
+            else if (IsNickMonitored(allarguments, out index)) {
+                //remove a case
+                if (index < 20) //0-19 index range reserved for cases, just null out
+                {
+                    monitor_items[index] = null;
+                }
+                //remove a nick
+                else
+                {
+                    monitor_items.RemoveAt(index);
+                }
+            }
+            else {
+                adihost.ActiveIWindow.OutputText("Could not find Nick \"" + allarguments + "\" in monitor list.");
             }
         }
 
@@ -275,16 +313,15 @@
         /// <param name="argument">keepNicks/removeNicks/drillmode</param>
         private void deepl_set(RegisteredCommandArgs argument)
         {
-
-            //TODO: change this setting to a toggle
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            if (allarguments.Equals("keepNicks"))
+            if (allarguments.Equals("autoRemoveNicks"))
             {
-                config_items.removePartingNicknames = false;
-            }
-            if (allarguments.Equals("removeNicks"))
-            {
-                config_items.removePartingNicknames = true;
+                config_items.removePartingNicknames = !config_items.removePartingNicknames;
+                // print drillmode state after switch
+                if (config_items.removePartingNicknames) adihost.ActiveIWindow.OutputText("Noncase Autoremove Enabled.");
+                else adihost.ActiveIWindow.OutputText("Noncase Autoremove Disabled.");
+
+                save_config_items();
             }
 
             if (allarguments.Equals("drillmode"))
@@ -296,7 +333,16 @@
                 if (drillmode) adihost.ActiveIWindow.OutputText("DrillMode™ Enabled!");
                 else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
-            save_config_items();
+
+            if (allarguments.Equals("debugmode"))
+            {
+                // this config should only be in memory, not saved to deepl.conf
+                debugmode = !debugmode;
+
+                // print drillmode state after switch
+                if (drillmode) adihost.ActiveIWindow.OutputText("DebugMode™ Enabled!");
+                else adihost.ActiveIWindow.OutputText("DebugMode™ Disabled.");
+            }
         }
 
         /// <summary>
@@ -308,7 +354,7 @@
             int index = 0;
             foreach (monitorItem item in monitor_items)
             {
-                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Cmdr: {2}, Channel: {3}", index, item.nickname, item.cmdr, item.window.Name));
+                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}, Channel: {3}", index, item.nickname, item.langcode, item.window.Name));
                 index++;
             }
             foreach (IWindow window in channel_monitor_items)
@@ -325,12 +371,14 @@
             adihost.ActiveIWindow.OutputText("/deepl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/deepl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
             adihost.ActiveIWindow.OutputText("/deepl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/deepl-rm <nickname> - Removes a single nickname from the monitor list.");
+            adihost.ActiveIWindow.OutputText("/deepl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
             adihost.ActiveIWindow.OutputText("/deepl-auto-case - Identifies nicknames from new cases in active channel and add them to the monitor list");
             adihost.ActiveIWindow.OutputText("/deepl-clearmon - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
             adihost.ActiveIWindow.OutputText("/deepl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/deepl-set removeNicks|keepNicks|drillmode - Configures certain behavious of the plugin. removeNicks -> autoremove monitored nicks that part the channel");
-            adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/deepl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin." +
+                "\n\autoRemoveNicks\t-> toggles auto removal of non-case nicks when nick parts or quits" +
+                "\n\tdrillmode\t-> toggles whether to observe MechaSqeak or DrillSqueak" +
+                "\n\tdebugmode\t-> toggles extra debug messages during operations"); adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
             adihost.ActiveIWindow.OutputText("/deepl-help - Shows this command reference");
         }
 
@@ -343,41 +391,40 @@
         /// <param name="message"></param>
         private void OnChannelNormalMessage(ChannelNormalMessageArgs message)
         {
+
             IChannel channel = message.Channel;
 
             // If Mecha or DrillSqueak say anyting
             string botName = "MechaSqueak[BOT]";
             if (drillmode) botName = "DrillSqueak[BOT]";
-            //channel.OutputText(message.User.Nick);
-            //channel.OutputText(botName);
             if (message.User.Nick.Equals(botName))
             {
                 // If channel is being monitored
-                //channel.OutputText("Matched Bot");
+                PrintDebug("Matched Bot");
                 if (channel_monitor_items.Contains(channel))
                 {
-                    //channel.OutputText("Matched Channel");
                     // Identify Ratsignal or Drillsignal
+                    PrintDebug("Matched Channel");
                     string stripped = Regex.Replace(message.Message, @"(\x03(?:\d{1,2}(?:,\d{1,2})?)?)|\x02|\x0F|\x16|\x1F", "");
                     Regex regex = new Regex(@"(RAT|DRILL)SIGNAL Case #(?<caseNum>\d+) (PC)? ?(?<platform>ODY|HOR|LEG|Playstation|Xbox).*CMDR (?<cmdr>.+) – System: .* Language: .+ \((?<langcode>[a-z]{2})(?:-\w{2,3})?\)(?: – Nick: (?<nickname>[\w\[\]\^-{|}]+))?.?(?:\((?:ODY|HOR|LEG|XB|PS)_SIGNAL\))?");
                     Match match = regex.Match(stripped);
                     if (match.Success)
                     {
                         // parse various regex groups into new monitorItem
-                        //channel.OutputText("Matched Ratsig");
+                        PrintDebug("Matched Ratsig");
                         if (match.Groups["langcode"].Success && match.Groups["caseNum"].Success)
                         {
                             string langcode = match.Groups["langcode"].Value.ToUpper();
 
-                            //channel.OutputText("Langcode success: " + langcode);
+                            PrintDebug("Langcode success: " + langcode);
                             int caseNum;
                             if (int.TryParse(match.Groups["caseNum"].Value, out caseNum))
                             {
                                 // cmdr name should always match, nick is only present if different from cmdr name.
                                 string cmdr = match.Groups["cmdr"].Value;
 
-                                //channel.OutputText("Case number: " + caseNum);
-                                //channel.OutputText("Cmdr: " + cmdr);
+                                PrintDebug("Case number: " + caseNum);
+                                PrintDebug("Cmdr: " + cmdr);
 
                                 // if Fuel Rats is absurdly busy
                                 if (caseNum >= monitor_items.Count)
@@ -389,10 +436,12 @@
                                 {
                                     string nick = match.Groups["nickname"].Value;
                                     monitor_items[caseNum] = new monitorItem(nick, cmdr, channel, langcode: langcode);
+                                    PrintDebug("Monitoring " + nick);
                                 }
                                 else
                                 {
                                     monitor_items[caseNum] = new monitorItem(cmdr, cmdr, channel, langcode: langcode);
+                                    PrintDebug("Monitoring " + cmdr);
                                 }
                             }
                         }
@@ -409,7 +458,10 @@
                     // check if case lang is EN or on the exclude list
                     string langcode = monitor_items[index].langcode;
                     if (!langcode.Equals("EN") && !config_items.lang_no_translation.Contains(langcode))
+                    {
+                        PrintDebug("Translating {0}'s message - {1}", message.User.Nick, message.Message);
                         deepl_translate_towindow("EN", message.Message, channel, message.User.Nick);
+                    }
                 }
             }
         }

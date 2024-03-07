@@ -31,8 +31,13 @@ namespace adiIRC_DeepL_plugin_test
                 testPlugin.save_config_items();
             }
 
-
             bool testResult = false;
+
+            // Test enabling debugmode
+            testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));
+            if (adiIRC_DeepL_plugin.debugmode) testResult = true;
+            else testResult = false;
+            PrintTestResult("Enable Debug Mode", testResult);
 
             // Test deepl-any call
             // TODO: error handle API functions, and make unit tests
@@ -40,7 +45,7 @@ namespace adiIRC_DeepL_plugin_test
             //await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
 
             // Test basic EN ratsignal
-            string rsig = "RATSIGNAL Case #3 PC HOR – CMDR Velica_Foriana – System: \"TASCHETER SECTOR QN - T A3 - 1\" (Brown dwarf 79.9 LY from Sol) – Language: English (United Kingdom) (en-GB) (HOR_SIGNAL)";
+            string rsig = "RATSIGNAL Case #3 PC HOR – CMDR Velica Foriana – System: \"TASCHETER SECTOR QN - T A3 - 1\" (Brown dwarf 79.9 LY from Sol) – Language: English (United Kingdom) (en-US) – Nick: Velica_Foriana (ODY_SIGNAL)";
             // Create example mecha rsig message
             ChannelNormalMessageArgs ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
             ratsignal.User.Nick = "MechaSqueak[BOT]";

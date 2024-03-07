@@ -375,10 +375,11 @@
             adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies fuelrat cases announced by MechaSqueak in the active channel and add them to the monitor list");
             adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
             adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/dl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin." +
-                "\n\autoRemoveNicks\t-> toggles auto removal of non-case nicks when nick parts or quits" +
-                "\n\tdrillmode\t-> toggles whether to observe MechaSqeak or DrillSqueak" +
-                "\n\tdebugmode\t-> toggles extra debug messages during operations"); adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin.");
+            adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> toggles auto removal of non-case nicks when nick parts or quits");
+            adihost.ActiveIWindow.OutputText("     drillmode        -> toggles whether to observe MechaSqeak or DrillSqueak");
+            adihost.ActiveIWindow.OutputText("     debugmode        -> toggles extra debug messages during operations");
+            adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 

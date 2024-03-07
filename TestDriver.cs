@@ -115,7 +115,7 @@ namespace adiIRC_DeepL_plugin_test
 
 
             // Print help message
-            //testPlugin.deepl_help(new RegisteredCommandArgs("", fuelratsChan));
+            testPlugin.deepl_help(new RegisteredCommandArgs("", fuelratsChan));
 
             Console.Write("Press the any key to continue...");
             Console.Read();

@@ -33,6 +33,7 @@ namespace adiIRC_DeepL_plugin_test
     public class monitorItem
     {
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
+        public int retries = 0;
         public IWindow window;   // The window to output translated messages into.
 
         public monitorItem(string nickname, string cmdr, IWindow window, string langcode = "EN", string platform = "")
@@ -157,7 +158,7 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="lang">Target Language</param>
         /// <param name="totranslate">Message to translate</param>
         /// <returns></returns>
-        public async Task<string> deepl_translate_any(string lang, string totranslate)
+        public async Task<string> deepl_translate_any(string lang, string totranslate, string nick="")
         {
             try
             {
@@ -176,6 +177,17 @@ namespace adiIRC_DeepL_plugin_test
                     if (response.IsSuccessStatusCode)
                     {
                         deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(await response.Content.ReadAsStringAsync());
+                        int index;
+                        if (!string.IsNullOrEmpty(nick) && jsonResponse.translations[0].detected_source_language.Equals("EN") && 
+                            IsNickMonitored(nick, out index))
+                        {
+                            monitor_items[index].retries++;
+                            if (monitor_items[index].retries >= 3)
+                            {
+                                monitor_items[index].langcode = "EN";
+                                PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
+                            }
+                        }
                         return jsonResponse.translations[0].text;
                     }
                 }
@@ -196,7 +208,7 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="fromNick">Client's nick</param>
         public async void deepl_translate_towindow(string lang, string totranslate, IWindow window, string fromNick)
         {
-            window.OutputText(fromNick + ": " + await deepl_translate_any(lang, totranslate));
+            window.OutputText(fromNick + ": " + await deepl_translate_any(lang, totranslate, fromNick));
         }
 
         /// <summary>

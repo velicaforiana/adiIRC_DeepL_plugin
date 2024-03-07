@@ -406,7 +406,7 @@
                     // Identify Ratsignal or Drillsignal
                     PrintDebug("Matched Channel");
                     string stripped = Regex.Replace(message.Message, @"(\x03(?:\d{1,2}(?:,\d{1,2})?)?)|\x02|\x0F|\x16|\x1F", "");
-                    Regex regex = new Regex(@"(RAT|DRILL)SIGNAL Case #(?<caseNum>\d+) (PC)? ?(?<platform>ODY|HOR|LEG|Playstation|Xbox).*CMDR (?<cmdr>.+) – System: .* Language: .+ \((?<langcode>[a-z]{2})(?:-\w{2,3})?\)(?: – Nick: (?<nickname>[\w\[\]\^-{|}]+))?.?(?:\((?:ODY|HOR|LEG|XB|PS)_SIGNAL\))?");
+                    Regex regex = new Regex(@"(RAT|DRILL)SIGNAL Case #(?<caseNum>\d+) (PC)? ?(?<platform>ODY|HOR|LEG|Playstation|Xbox).*CMDR (?<cmdr>.+?) (\(Offline\) )?– System: .* Language: .+ \((?<langcode>[a-z]{2})(?:-\w{2,3})?\)(?: – Nick: (?<nickname>[\w\[\]\^-{|}]+))?.?(?:\((?:ODY|HOR|LEG|XB|PS)_SIGNAL\))?");
                     Match match = regex.Match(stripped);
                     if (match.Success)
                     {

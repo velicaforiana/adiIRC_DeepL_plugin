@@ -80,7 +80,7 @@ namespace adiIRC_DeepL_plugin_test
             // test case 3 should be null, and test case 5 should be unaffected
             if (testPlugin.monitor_items[3] == null && testPlugin.monitor_items[5].nickname.Equals("Delryn")) testResult = true;
             else testResult = false;
-            PrintTestResult("Case Number Remove", testResult);
+            PrintTestResult("Case Number Removed", testResult);
 
 
             // Test manual monitoring
@@ -96,7 +96,7 @@ namespace adiIRC_DeepL_plugin_test
             testPlugin.deepl_rm(new RegisteredCommandArgs("JaneDoe", fuelratsChan));
             if (testPlugin.monitor_items.Count == 20) testResult = true;
             else testResult = false;
-            PrintTestResult("Manual Monitor Remove", testResult);
+            PrintTestResult("Manual Monitor Removed", testResult);
 
 
             // Print help message

@@ -378,20 +378,20 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_help(RegisteredCommandArgs argument)
         {
             adihost.ActiveIWindow.OutputText("AdiIRC Deepl Plugin Command Reference");
-            adihost.ActiveIWindow.OutputText("/deepl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
-            adihost.ActiveIWindow.OutputText("/deepl-en <text> - Translates text to english");
-            adihost.ActiveIWindow.OutputText("/deepl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
-            adihost.ActiveIWindow.OutputText("/deepl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/deepl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
-            adihost.ActiveIWindow.OutputText("/deepl-auto-case - Identifies nicknames from new cases in active channel and add them to the monitor list");
-            adihost.ActiveIWindow.OutputText("/deepl-clearmon - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
-            adihost.ActiveIWindow.OutputText("/deepl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/deepl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin." +
+            adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
+            adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
+            adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
+            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to english");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
+            adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies nicknames from new cases in active channel and add them to the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-clearmon - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
+            adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
+            adihost.ActiveIWindow.OutputText("/dl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin." +
                 "\n\tautoRemoveNicks\t-> toggles auto removal of non-case nicks when nick parts or quits" +
                 "\n\tdrillmode\t-> toggles whether to observe MechaSqeak or DrillSqueak" +
                 "\n\tdebugmode\t-> toggles extra debug messages during operations");
-            adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
-            adihost.ActiveIWindow.OutputText("/deepl-help - Shows this command reference");
+            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 
         /// <summary>
@@ -583,17 +583,17 @@ namespace adiIRC_DeepL_plugin_test
                 monitor_items.Add(null);
             channel_monitor_items = new List<IWindow>();
             load_config_items();
-            /*adihost.HookCommand("/deepl-api", set_DeepL_ApiKey);
-            adihost.HookCommand("/deepl-en", deepl_en);
-            adihost.HookCommand("/deepl-any", deepl_any);
-            adihost.HookCommand("/deepl-mon", deepl_mon);
-            adihost.HookCommand("/deepl-rm", deepl_rm);
-            adihost.HookCommand("/deepl-auto-case", deepl_auto_case);
-            adihost.HookCommand("/deepl-clearmon", deepl_clearmon);
-            adihost.HookCommand("/deepl-exclude", deepl_exclude);
-            adihost.HookCommand("/deepl-set", deepl_set);
-            adihost.HookCommand("/deepl-debug", deepl_debug);
-            adihost.HookCommand("/deepl-help", deepl_help);
+            /*adihost.HookCommand("/dl-api", set_DeepL_ApiKey);
+            adihost.HookCommand("/dl-en", deepl_en);
+            adihost.HookCommand("/dl-any", deepl_any);
+            adihost.HookCommand("/dl-mon", deepl_mon);
+            adihost.HookCommand("/dl-rm", deepl_rm);
+            adihost.HookCommand("/dl-mecha", deepl_auto_case);
+            adihost.HookCommand("/dl-clear", deepl_clearmon);
+            adihost.HookCommand("/dl-exclude", deepl_exclude);
+            adihost.HookCommand("/dl-set", deepl_set);
+            adihost.HookCommand("/dl-debug", deepl_debug);
+            adihost.HookCommand("/dl-help", deepl_help);
             adihost.OnChannelNormalMessage += OnChannelNormalMessage;
             adihost.OnNick += OnNick;
             adihost.OnQuit += OnQuit;

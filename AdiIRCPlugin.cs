@@ -324,7 +324,7 @@
             int index = 0;
             foreach (monitorItem item in monitor_items)
             {
-                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Cmdr: {2}, Channel: {3}", index, item.nickname, item.cmdr, item.window.Name));
+                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}, Channel: {3}", index, item.nickname, item.langcode, item.window.Name));
                 index++;
             }
             foreach (IWindow window in channel_monitor_items)

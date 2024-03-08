@@ -7,3 +7,9 @@ The most important one would be /dl-mon <nick> to mark that nickname for transla
 
 In addition to the general translation feature there is some Fuelrats(fuelrats.com) integration as well.
 Incoming cases and their language can be identified and marked for tranlation if needed.
+
+# Installation
+
+ - Make sure you have .NET installed. This plugin is compiled against .NET 4.8 (AdiIRC is using 4.5)
+ - Place the content of the release package (2 DLL files) into the plugin folder of your AdiIRC installation
+ - In AdiIRC select Files -> Plugins. Then select "Install new" and select "adiIRC_DeepL.dll" next.

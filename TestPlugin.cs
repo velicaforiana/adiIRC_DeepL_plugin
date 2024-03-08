@@ -22,6 +22,7 @@ namespace adiIRC_DeepL_plugin_test
     public class deepl_json_response
     {
         public List<deepl_translation> translations;
+        public string message;
     }
 
     public class deepl_translation
@@ -179,10 +180,16 @@ namespace adiIRC_DeepL_plugin_test
                     requestMessage.Content = new FormUrlEncodedContent(dict);
 
                     HttpResponseMessage response = await httpClient.SendAsync(requestMessage);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+
+                    deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
                     if (response.IsSuccessStatusCode)
                     {
-                        deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(await response.Content.ReadAsStringAsync());
                         return jsonResponse.translations[0];
+                    }
+                    else
+                    {
+                        adihost.ActiveIWindow.OutputText(jsonResponse.message);
                     }
                 }
             }
@@ -235,13 +242,14 @@ namespace adiIRC_DeepL_plugin_test
         /// Helper function to parse arguments for deepl_translate_any()
         /// </summary>
         /// <param name="argument">language code, and message to translate</param>
-        public async Task deepl_any(RegisteredCommandArgs argument) // for testing, return Task so we can await the completion of this function
+        public async Task<string> deepl_any(RegisteredCommandArgs argument) // for testing, return Task<string> so we can await the completion of this function and validate output
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string lang = allarguments.Substring(0, 2).ToUpper();
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate_any(lang, totranslate);
             argument.Window.Editbox.Text = translation.text;
+            return translation.text;
         }
 
         /// <summary>

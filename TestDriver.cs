@@ -41,7 +41,7 @@ namespace adiIRC_DeepL_plugin_test
 
             // Test deepl-any call
             // TODO: error handle API functions, and make unit tests
-            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
+            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ EN This is a test.", fuelratsChan));
             //await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
 
             // Test basic EN ratsignal
@@ -64,7 +64,6 @@ namespace adiIRC_DeepL_plugin_test
             // Create example mecha rsig message
             ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
             ratsignal.User.Nick = "MechaSqueak[BOT]";
-            testPlugin.deepl_auto_case(new RegisteredCommandArgs("", fuelratsChan));
             testPlugin.OnChannelNormalMessage(ratsignal);
 
             // Check if case was onboarded into correct monitor_items slot
@@ -79,7 +78,6 @@ namespace adiIRC_DeepL_plugin_test
             rsig = "RATSIGNAL Case #5 PC HOR – CMDR Delryn – System: \"SECTOR RU-C A14 - 2\" (Unconfirmed) – Language: Russian (Russia) (ru-RU) (HOR_SIGNAL)";
             ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
             ratsignal.User.Nick = "MechaSqueak[BOT]";
-            testPlugin.deepl_auto_case(new RegisteredCommandArgs("", fuelratsChan));
             testPlugin.OnChannelNormalMessage(ratsignal);
 
             // Check if case was onboarded into correct monitor_items slot
@@ -88,6 +86,22 @@ namespace adiIRC_DeepL_plugin_test
                 testPlugin.monitor_items[5].langcode.Equals("RU")) testResult = true;
             else testResult = false;
             PrintTestResult("RU Rsig Autodetect", testResult);
+
+
+            // Test auto EN
+            /*ChannelNormalMessageArgs userMessage = new ChannelNormalMessageArgs("This is a test.", fuelratsChan);
+            userMessage.User.Nick = "Delryn";
+            testPlugin.OnChannelNormalMessage(userMessage);
+            System.Threading.Thread.Sleep(1000);
+            testPlugin.OnChannelNormalMessage(userMessage);
+            System.Threading.Thread.Sleep(1000);
+            testPlugin.OnChannelNormalMessage(userMessage);
+            System.Threading.Thread.Sleep(1000);
+            testPlugin.OnChannelNormalMessage(userMessage);
+            if (testPlugin.monitor_items[5] != null &&
+                testPlugin.monitor_items[5].langcode.Equals("EN")) testResult = true;
+            else testResult = false;
+            PrintTestResult("Auto Stop Translate", testResult);*/
 
 
             // Test case remove

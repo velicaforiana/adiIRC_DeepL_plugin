@@ -27,6 +27,7 @@
     public class monitorItem
     {
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
+        public int retries = 0;
         public IWindow window;   // The window to output translated messages into.
 
         public monitorItem(string nickname, string cmdr, IWindow window, string langcode = "EN", string platform = "")
@@ -150,7 +151,7 @@
         /// <param name="lang">Target Language</param>
         /// <param name="totranslate">Message to translate</param>
         /// <returns></returns>
-        private async Task<string> deepl_translate_any(string lang, string totranslate)
+        private async Task<string> deepl_translate_any(string lang, string totranslate, string nick="")
         {
             try
             {
@@ -169,6 +170,21 @@
                     if (response.IsSuccessStatusCode)
                     {
                         deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(await response.Content.ReadAsStringAsync());
+                        int index;
+                        if (IsNickMonitored(nick, out index))
+                        {
+                            if (!string.IsNullOrEmpty(nick) && jsonResponse.translations[0].detected_source_language.Equals("EN"))
+                            {
+                                monitor_items[index].retries++;
+                                if (monitor_items[index].retries >= 3)
+                                {
+                                    monitor_items[index].langcode = "EN";
+                                    PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
+                                }
+                            }
+                            else
+                                monitor_items[index].retries = 0;
+                        }
                         return jsonResponse.translations[0].text;
                     }
                 }
@@ -246,7 +262,8 @@
                 else
                     adihost.ActiveIWindow.OutputText("Could not find case #" + allarguments + " in monitor list.");
             }
-            else if (IsNickMonitored(allarguments, out index)) {
+            else if (IsNickMonitored(allarguments, out index)) 
+            {
                 //remove a case
                 if (index < 20) //0-19 index range reserved for cases, just null out
                 {
@@ -258,7 +275,8 @@
                     monitor_items.RemoveAt(index);
                 }
             }
-            else {
+            else 
+            {
                 adihost.ActiveIWindow.OutputText("Could not find Nick \"" + allarguments + "\" in monitor list.");
             }
         }

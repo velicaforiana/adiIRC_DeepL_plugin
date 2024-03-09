@@ -22,12 +22,18 @@ namespace adiIRC_DeepL_plugin_test
     public class deepl_json_response
     {
         public List<deepl_translation> translations;
+        public string message;
     }
 
     public class deepl_translation
     {
         public string detected_source_language;
         public string text;
+        public deepl_translation()
+        {
+            detected_source_language = "";
+            text = "";
+        }
     }
 
     public class monitorItem
@@ -158,7 +164,7 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="lang">Target Language</param>
         /// <param name="totranslate">Message to translate</param>
         /// <returns></returns>
-        public async Task<string> deepl_translate_any(string lang, string totranslate, string nick="")
+        public async Task<deepl_translation> deepl_translate_any(string lang, string totranslate, string nick="")
         {
             try
             {
@@ -174,25 +180,16 @@ namespace adiIRC_DeepL_plugin_test
                     requestMessage.Content = new FormUrlEncodedContent(dict);
 
                     HttpResponseMessage response = await httpClient.SendAsync(requestMessage);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+
+                    deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
                     if (response.IsSuccessStatusCode)
                     {
-                        deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(await response.Content.ReadAsStringAsync());
-                        int index;
-                        if (IsNickMonitored(nick, out index))
-                        {
-                            if (!string.IsNullOrEmpty(nick) && jsonResponse.translations[0].detected_source_language.Equals("EN"))
-                            {
-                                monitor_items[index].retries++;
-                                if (monitor_items[index].retries >= 3)
-                                {
-                                    monitor_items[index].langcode = "EN";
-                                    PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
-                                }
-                            }
-                            else
-                                monitor_items[index].retries = 0;
-                        }
-                        return jsonResponse.translations[0].text;
+                        return jsonResponse.translations[0];
+                    }
+                    else
+                    {
+                        adihost.ActiveIWindow.OutputText(jsonResponse.message);
                     }
                 }
             }
@@ -200,7 +197,7 @@ namespace adiIRC_DeepL_plugin_test
             {
                 adihost.ActiveIWindow.OutputText(e.ToString());
             }
-            return "";
+            return new deepl_translation();
         }
 
         /// <summary>
@@ -212,7 +209,23 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="fromNick">Client's nick</param>
         public async void deepl_translate_towindow(string lang, string totranslate, IWindow window, string fromNick)
         {
-            window.OutputText(fromNick + ": " + await deepl_translate_any(lang, totranslate, fromNick));
+            deepl_translation translation = await deepl_translate_any(lang, totranslate);
+            int index;
+            if (IsNickMonitored(fromNick, out index))
+            {
+                if (!string.IsNullOrEmpty(fromNick) && translation.detected_source_language.Equals("EN"))
+                {
+                    monitor_items[index].retries++;
+                    if (monitor_items[index].retries >= 3)
+                    {
+                        monitor_items[index].langcode = "EN";
+                        PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
+                    }
+                }
+                else
+                    monitor_items[index].retries = 0;
+            }
+            window.OutputText(fromNick + "(" + translation.detected_source_language + "): " + translation.text);
         }
 
         /// <summary>
@@ -229,12 +242,14 @@ namespace adiIRC_DeepL_plugin_test
         /// Helper function to parse arguments for deepl_translate_any()
         /// </summary>
         /// <param name="argument">language code, and message to translate</param>
-        public async Task deepl_any(RegisteredCommandArgs argument) // for testing, return Task so we can await the completion of this function
+        public async Task<string> deepl_any(RegisteredCommandArgs argument) // for testing, return Task<string> so we can await the completion of this function and validate output
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string lang = allarguments.Substring(0, 2).ToUpper();
             string totranslate = allarguments.Substring(3);
-            argument.Window.Editbox.Text = await deepl_translate_any(lang, totranslate);
+            deepl_translation translation = await deepl_translate_any(lang, totranslate);
+            argument.Window.Editbox.Text = translation.text;
+            return translation.text;
         }
 
         /// <summary>
@@ -402,11 +417,11 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies fuelrat cases announced by MechaSqueak in the active channel and add them to the monitor list");
             adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
             adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/dl-set autoRemoveNicks|drillmode - Configures certain behavious of the plugin.");
+            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
             adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> toggles auto removal of non-case nicks when nick parts or quits");
             adihost.ActiveIWindow.OutputText("     drillmode        -> toggles whether to observe MechaSqeak or DrillSqueak");
             adihost.ActiveIWindow.OutputText("     debugmode        -> toggles extra debug messages during operations");
-            adihost.ActiveIWindow.OutputText("/deepl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 

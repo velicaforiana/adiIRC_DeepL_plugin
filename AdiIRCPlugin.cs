@@ -17,6 +17,7 @@
     public class deepl_json_response
     {
         public List<deepl_translation> translations;
+        public string message;
     }
 
     public class deepl_translation
@@ -80,9 +81,8 @@
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
         private List<IWindow> channel_monitor_items;
-        private static bool drillmode = false;
-        private static bool debugmode = false;
-        
+        private static bool drillmode = false, debugmode = false, reverseTranslate = false;
+
         /// <summary>
         /// If debugmode = true, print the message to the active window
         /// </summary>
@@ -247,7 +247,7 @@
             argument.Window.Editbox.Text = translation.text;
 
             deepl_translation reverseTranslation = null;
-            if (config_items.reverseTranslate)
+            if (reverseTranslate)
             {
                 reverseTranslation = await deepl_translate_any("EN", translation.text);
                 argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
@@ -368,9 +368,9 @@
 
             if (allarguments.Equals("reverseTranslate"))
             {
-                config_items.reverseTranslate = !config_items.reverseTranslate;
+                reverseTranslate = !reverseTranslate;
                 // print drillmode state after switch
-                if (config_items.reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
+                if (reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
                 else adihost.ActiveIWindow.OutputText("Reverse Translation Disabled.");
 
                 save_config_items();
@@ -414,7 +414,7 @@
                 adihost.ActiveIWindow.OutputText("Monitored Channel: " + window.Name);
             }
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
-            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + config_items.reverseTranslate);
+            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
         }
 
@@ -431,7 +431,7 @@
             adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
             adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
             adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits");
-            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (config) toggles a reverse translation of /dl-any");
+            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (memory) toggles a reverse translation of /dl-any");
             adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqeak or DrillSqueak");
             adihost.ActiveIWindow.OutputText("     debugmode        -> (memory) toggles extra debug messages during operations");
             adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");

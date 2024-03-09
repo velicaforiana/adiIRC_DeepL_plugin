@@ -57,12 +57,10 @@ namespace adiIRC_DeepL_plugin_test
         public string apikey;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
-        public bool reverseTranslate;
 
         public deepl_config_items()
         {
             removePartingNicknames = false;
-            reverseTranslate = false;
             apikey = "";
             lang_no_translation = new List<string>();
         }
@@ -85,7 +83,7 @@ namespace adiIRC_DeepL_plugin_test
         public deepl_config_items config_items;
         public List<monitorItem> monitor_items;
         public List<IWindow> channel_monitor_items;
-        public static bool drillmode = false, debugmode = false;
+        public static bool drillmode = false, debugmode = false, reverseTranslate = false;
 
         /// <summary>
         /// If debugmode = true, print the message to the active window
@@ -252,14 +250,14 @@ namespace adiIRC_DeepL_plugin_test
             argument.Window.Editbox.Text = translation.text;
 
             deepl_translation reverseTranslation = null;
-            if (config_items.reverseTranslate)
+            if (reverseTranslate)
             {
                 reverseTranslation = await deepl_translate_any("EN", translation.text);
                 argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
             }
 
             // return type changd for debug and unit test purposes
-            if (config_items.reverseTranslate && reverseTranslation != null)
+            if (reverseTranslate && reverseTranslation != null)
                 return translation.text + "|" + reverseTranslation.text;
             return translation.text;
         }
@@ -380,9 +378,9 @@ namespace adiIRC_DeepL_plugin_test
 
             if (allarguments.Equals("reverseTranslate"))
             {
-                config_items.reverseTranslate = !config_items.reverseTranslate;
+                reverseTranslate = !reverseTranslate;
                 // print drillmode state after switch
-                if (config_items.reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
+                if (reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
                 else adihost.ActiveIWindow.OutputText("Reverse Translation Disabled.");
 
                 save_config_items();
@@ -426,7 +424,7 @@ namespace adiIRC_DeepL_plugin_test
                 adihost.ActiveIWindow.OutputText("Monitored Channel: " + window.Name);
             }
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
-            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + config_items.reverseTranslate);
+            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
         }
 
@@ -443,7 +441,7 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
             adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
             adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits");
-            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (config) toggles a reverse translation of /dl-any");
+            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (memory) toggles a reverse translation of /dl-any");
             adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqeak or DrillSqueak");
             adihost.ActiveIWindow.OutputText("     debugmode        -> (memory) toggles extra debug messages during operations");
             adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");

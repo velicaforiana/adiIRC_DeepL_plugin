@@ -33,7 +33,6 @@ namespace adiIRC_DeepL_plugin_test
 
             bool testResult = false;
             bool testAPI = true; // flip this switch to test API calls, keep off to save API usage
-            if (testPlugin.config_items.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan));
 
             // Test enabling debugmode
             testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));
@@ -159,7 +158,7 @@ namespace adiIRC_DeepL_plugin_test
             if (testAPI)
             {
                 Console.WriteLine("\n==== Reverse Translation ====");
-                if (!testPlugin.config_items.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan));
+                if (!adiIRC_DeepL_plugin.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan));
                 string translation = await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
                 if (translation.Equals("Il s'agit d'un test.|This is a test.")) testResult = true;
                 else testResult = false;

@@ -5,13 +5,187 @@ A DeepL API Key is required and can be set using the /dl-api command.
 /dl-help will list all supported commands.
 The most important one would be /dl-mon <nick> to mark that nickname for translation.
 
-In addition to the general translation feature there is some Fuelrats(fuelrats.com) integration as well.
-Incoming cases and their language can be identified and marked for tranlation if needed.
-Fellow Fuelrat Dispatchers keep in mind that if you use the /dl-mecha option it can be tempting to dispatch
-the entire case in the clients native language, but if they talk english themself that is always preferable.
+In addition to the general translation feature there are some [Fuel Rats](https://fuelrats.com) integrations as well.
+Incoming cases and their language can be automatically identified and marked for tranlation if needed.
+
+# Warnings
+
+- Fuel Rats: This plugin is meant for experienced rats.
+- Fuel Rat Dispatchers: Always ask the client if they speak English. It is always better to dispatch cases in English if the client speaks it fluently.
 
 # Installation
 
- - Make sure you have .NET installed. This plugin is compiled against .NET 4.8 (AdiIRC is using 4.5)
- - Place the content of the release package (2 DLL files) into the plugin folder of your AdiIRC installation
- - In AdiIRC select Files -> Plugins. Then select "Install new" and select "adiIRC_DeepL.dll" next.
+### Prerequisites
+
+ - [AdiIRC v4.4](https://adiirc.com/)
+ - [.NET 4.8](https://dotnet.microsoft.com/en-us/download/dotnet-framework)
+ - [DeepL Free Account](https://www.deepl.com/en/signup/?cta=checkout)
+ - [DeepL API Key](https://www.deepl.com/your-account/summary)
+
+## Installation
+
+ 1. [Download](https://github.com/velicaforiana/adiIRC_DeepL_plugin/tags) the latest package
+ 2. Close AdiIRC
+ 3. Extract the 2 DLL files to your AdiIRC Plugin Directory
+    - Default location: %localappdata%\AdiIRC\Plugins
+ 4. Open AdiIRC
+ 5. Click to Files -> Plugins.
+    - If the plugin is not listed: Click "Install New". Select the "adiIRC_DeepL.dll" from the Plugins directory.
+    - If the plugin is listed: Select "adiIRC_DeepL.dll" and click "Load"
+ 6. Type "/dl-help" in an AdiIRC editbox to see if the help page prints.
+   
+# Usage
+
+--  
+**/dl-debug**
+```
+/dl-debug
+Args:
+ - None
+Example usage:
+/dl-debug
+```
+
+Prints man page.
+
+--  
+**/dl-api**
+```
+/dl-api <api-key>
+Args:
+ - api-key: The API Key provided with a free DeepL account
+Example usage:
+/dl-api 45f3d41b-5b37-4a2c-404f-65424d7fddb1:fx
+```
+
+This plugin uses the DeepL API to perform its translations. Users must sign up for a free DeepL account [here](https://www.deepl.com/en/signup/?cta=checkout). Once the account is created, the API key can be retrieved [here](https://www.deepl.com/your-account/summary).
+
+--  
+**/dl-en**
+```
+/dl-en <message>
+Args:
+ - message: Non-english message that will be (hopefully) translated into English.
+Example usage:
+/dl-en Il s'agit d'un test.
+```
+
+This will translate a message from any DeepL supported language to English, and print the resulting translation to the output window.
+
+--  
+**/dl-any**
+```
+/dl-any <langcode> <message>
+Args:
+ - langcode: Two letter language code for target translation
+ - message: Message to translate into target language
+Example usage:
+/dl-any FR This is a test
+```
+
+Translates any language into a target language. Usually this will be your native language into a non-native language. "/dl-set reverseTranslate" can be used to enable this function to translate the resulting message back into English for inspection purposes.
+
+--  
+**/dl-mon**
+```
+/dl-mon <nickname>
+Args:
+ - nickname: User nick you want to automatically translate
+Example usage:
+/dl-mon Delryn
+```
+
+Enables monitoring of a specific user, and will automatically translate any message that the user sends. If the translation is detected as English three times in a row, monitoring will be disabled to conserve API usage.
+
+--  
+**/dl-rm**
+```
+/dl-rm <nickname>|<caseNumber>
+Args:
+ - nickname: User nick to stop monitoring
+ - caseNumber: (For Fuel Rats) case number to stop monitoring
+Example usage:
+/dl-rm Delryn
+/dl-rm 4
+```
+
+Clears monitoring of a specific user. For Fuel Rats usage, you can supply a case number to stop monitoring on a specific case.
+
+--  
+**/dl-mecha**
+```
+/dl-mecha
+Args:
+ - None
+Example usage:
+/dl-mecha
+```
+
+For Fuel Rat usage. Enables monitoring for Rat Signals from MechaSqueak[BOT] in the channel in which the command was executed. If a Rat Signal is detected, the plugin will parse the signal, and automatically start monitoring the client if their language is not English, or ignored.
+
+--  
+**/dl-clear**
+```
+/dl-clear
+Args:
+ - None
+Example usage:
+/dl-clear
+```
+
+Clears all currently monitored users and channels.
+
+--  
+**/dl-exclude**
+```
+/dl-exclude <langcode>
+Args:
+ - langcode: Two letter language code to NOT translate
+Example usage:
+/dl-exclude DE
+```
+
+Currently only for Fuel Rats use with autodetected cases. If you speak languages other than English, use this command to disable automatic translation for those languages.
+
+--  
+**/dl-set**
+```
+/dl-rm <option>
+Options:
+  autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits
+  reverseTranslate -> (memory) toggles a reverse translation of /dl-any
+  drillmode        -> (memory) toggles whether to observe MechaSqueak or DrillSqueak
+  debugmode        -> (memory) toggles extra debug messages during operations
+Example usage:
+/dl-set reverseTranslate
+/dl-set autoRemoveNicks
+```
+
+Use this command to toggle various options. Options labeled as "(config)" will be written to the deepl.conf file and remembered between Adi client. Options labeled as "(memory)" will be forgotten between Adi client restarts.
+
+- autoRemoveNicks (config): When a monitored client leaves IRC, this will automatically remove them from monitoring. This does not apply to Fuel Rat case clients, monitored by /dl-mecha.
+- reverseTranslate (memory): When using /dl-any, this will additionally take the resulting translation, and feed it back to DeepL to translate the message back into English. The reverse translated English message will be printed to the Output Window. This can be useful when trying to communicate nuanced information, and helps the user check if their message was translated properly. Warning: This will increase translation character usage of the Free DeepL Account API.
+- drillmode (memory): Fuel Rat Usage. Changes the plugin to monitor DrillSqueak instead of MechaSqueak. Used primarily for testing the plugin.
+- debugmode (memory): Enables various debug missions to be printed to the Output Window.
+
+--  
+**/dl-debug**
+```
+/dl-debug
+Args:
+ - None
+Example usage:
+/dl-debug
+```
+
+Prints various information, useful for troubleshooting and debugging.
+
+## Troubleshooting
+
+**None of the commands work**  
+Insure that File > Plugins shows the "adiIRC_DeepL.dll" plugin as "Loaded". Then fully close and restart your Adi client.
+
+**Library was not found**  
+If using Linux, make sure .NET 4.8 is installed with the same WINEPREFIX as AdiIRC  
+If using Windows, make sure .NET 4.8 is installed  
+Make sure that the Newtonsoft.dll is placed in the AdiIRC plugins directory.

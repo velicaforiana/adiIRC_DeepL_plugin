@@ -40,16 +40,14 @@ namespace adiIRC_DeepL_plugin_test
     {
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
         public int retries = 0;
-        public IWindow window;   // The window to output translated messages into.
 
-        public monitorItem(string nickname, string cmdr, IWindow window, string langcode = "EN", string platform = "")
+        public monitorItem(string nickname, string cmdr, string langcode = "EN", string platform = "")
         {
             //A case object, keeping track of a client's nick, cmdr, platform, and channel window
             this.nickname = nickname;
             this.cmdr = cmdr;
             this.langcode = langcode;
             this.platform = platform; //for future use, maybe
-            this.window = window;
         }
     }
     public class deepl_config_items
@@ -271,7 +269,7 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_mon(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, argument.Window, langcode: "ZZ");
+            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: "ZZ");
 
             if (!IsNickMonitored(allarguments))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
@@ -419,7 +417,7 @@ namespace adiIRC_DeepL_plugin_test
             int index = 0;
             foreach (monitorItem item in monitor_items)
             {
-                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}, Channel: {3}", index, item.nickname, item.langcode, item.window.Name));
+                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}", index, item.nickname, item.langcode));
                 index++;
             }
             foreach (string channelName in config_items.channel_monitor_items)
@@ -503,12 +501,12 @@ namespace adiIRC_DeepL_plugin_test
                                 if (match.Groups["nickname"].Success)
                                 {
                                     string nick = match.Groups["nickname"].Value;
-                                    monitor_items[caseNum] = new monitorItem(nick, cmdr, channel, langcode: langcode);
+                                    monitor_items[caseNum] = new monitorItem(nick, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + nick);
                                 }
                                 else
                                 {
-                                    monitor_items[caseNum] = new monitorItem(cmdr, cmdr, channel, langcode: langcode);
+                                    monitor_items[caseNum] = new monitorItem(cmdr, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + cmdr);
                                 }
                             }

@@ -19,9 +19,18 @@ namespace adiIRC_DeepL_plugin_test
         public static async Task Main(string[] args)
         {
             adiIRC_DeepL_plugin testPlugin = new adiIRC_DeepL_plugin();
+
+            // Set up channel
             IChannel fuelratsChan = new IChannel();
             fuelratsChan.Name = "#fuelrats";
-            IPluginHost pluginHost = new IPluginHost(fuelratsChan, ".\\");
+            List<IChannel> fuelratsChannelList = new List<IChannel>();
+            fuelratsChannelList.Add(fuelratsChan);
+
+            // Set up server
+            IServer fuelratsServer = new IServer(fuelratsChannelList);
+            List<IServer> fuelratsServerList = new List<IServer>();
+            fuelratsServerList.Add(fuelratsServer);
+            IPluginHost pluginHost = new IPluginHost(fuelratsChan, ".\\", fuelratsServerList);
             testPlugin.Initialize(pluginHost);
 
             //If API key is not saved, prompt user for key
@@ -32,7 +41,7 @@ namespace adiIRC_DeepL_plugin_test
             }
 
             bool testResult = false;
-            bool testAPI = true; // flip this switch to test API calls, keep off to save API usage
+            bool testAPI = false; // flip this switch to test API calls, keep off to save API usage
 
             // Test enabling debugmode
             testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));

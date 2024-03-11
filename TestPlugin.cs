@@ -57,12 +57,14 @@ namespace adiIRC_DeepL_plugin_test
         public string apikey;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
+        public List<string> channel_monitor_items;
 
         public deepl_config_items()
         {
             removePartingNicknames = false;
             apikey = "";
             lang_no_translation = new List<string>();
+            channel_monitor_items = new List<string>();
         }
     }
 
@@ -82,7 +84,6 @@ namespace adiIRC_DeepL_plugin_test
         private string deepl_config_file;
         public deepl_config_items config_items;
         public List<monitorItem> monitor_items;
-        public List<IWindow> channel_monitor_items;
         public static bool drillmode = false, debugmode = false, reverseTranslate = false;
 
         /// <summary>
@@ -120,6 +121,7 @@ namespace adiIRC_DeepL_plugin_test
                 adihost.ActiveIWindow.OutputText(e.ToString());
             }
         }
+
 
         /// <summary>
         /// Reads JSON config file from %appdatalocal%\AdiIRC
@@ -279,7 +281,6 @@ namespace adiIRC_DeepL_plugin_test
         /// <summary>
         /// Removes a user nick from the monitor list.
         /// If the user is apart of an active case, it will blank out the case
-        /// TODO: Allow removing by nick or casenum
         /// </summary>
         /// <param name="argument">Nick to remove from monitoring</param>
         public void deepl_rm(RegisteredCommandArgs argument)
@@ -321,9 +322,10 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="argument">Current Channel</param>
         public void deepl_auto_case(RegisteredCommandArgs argument)
         {
-            if (!channel_monitor_items.Contains(argument.Window))
+            if (!config_items.channel_monitor_items.Contains(argument.Window.Name))
             {
-                channel_monitor_items.Add(argument.Window);
+                config_items.channel_monitor_items.Add(argument.Window.Name);
+                save_config_items();
             }
         }
 
@@ -337,7 +339,8 @@ namespace adiIRC_DeepL_plugin_test
             for (int i = 0; i < 10; i++)
                 monitor_items.Add(null);
 
-            channel_monitor_items.Clear();
+            config_items.channel_monitor_items.Clear();
+            save_config_items();
         }
 
         /// <summary>
@@ -419,9 +422,9 @@ namespace adiIRC_DeepL_plugin_test
                 if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}, Channel: {3}", index, item.nickname, item.langcode, item.window.Name));
                 index++;
             }
-            foreach (IWindow window in channel_monitor_items)
+            foreach (string channelName in config_items.channel_monitor_items)
             {
-                adihost.ActiveIWindow.OutputText("Monitored Channel: " + window.Name);
+                adihost.ActiveIWindow.OutputText("Monitored Channel: " + channelName);
             }
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
             adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
@@ -466,7 +469,7 @@ namespace adiIRC_DeepL_plugin_test
             {
                 // If channel is being monitored
                 PrintDebug("Matched Bot");
-                if (channel_monitor_items.Contains(channel))
+                if (config_items.channel_monitor_items.Contains(channel.Name))
                 {
                     // Identify Ratsignal or Drillsignal
                     PrintDebug("Matched Channel");
@@ -635,7 +638,7 @@ namespace adiIRC_DeepL_plugin_test
             monitor_items = new List<monitorItem>();
             for (int i = 0; i < 20; i++)
                 monitor_items.Add(null);
-            channel_monitor_items = new List<IWindow>();
+            
             load_config_items();
             /*adihost.HookCommand("/dl-api", set_DeepL_ApiKey);
             adihost.HookCommand("/dl-en", deepl_en);

@@ -7,6 +7,8 @@ The most important one would be /dl-mon <nick> to mark that nickname for transla
 
 In addition to the general translation feature there is some Fuelrats(fuelrats.com) integration as well.
 Incoming cases and their language can be identified and marked for tranlation if needed.
+Fellow Fuelrat Dispatchers keep in mind that if you use the /dl-mecha option it can be tempting to dispatch
+the entire case in the clients native language, but if they talk english themself that is always preferable.
 
 # Installation
 

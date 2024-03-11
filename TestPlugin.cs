@@ -442,7 +442,7 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
             adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits");
             adihost.ActiveIWindow.OutputText("     reverseTranslate -> (memory) toggles a reverse translation of /dl-any");
-            adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqeak or DrillSqueak");
+            adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
             adihost.ActiveIWindow.OutputText("     debugmode        -> (memory) toggles extra debug messages during operations");
             adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");

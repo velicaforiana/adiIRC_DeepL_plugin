@@ -94,7 +94,7 @@ namespace adiIRC_DeepL_plugin_test
 
             // Test auto EN
             ChannelNormalMessageArgs userMessage = new ChannelNormalMessageArgs("This is a test.", fuelratsChan);
-            if (testAPI)
+            if (false)
             {
                 Console.WriteLine("\n==== AutoStop Translations ====");
                 userMessage.User.Nick = "Delryn";
@@ -151,6 +151,18 @@ namespace adiIRC_DeepL_plugin_test
                 if (success.Equals("Il s'agit d'un test.") && String.IsNullOrEmpty(failure)) testResult = true;
                 else testResult = false;
                 PrintTestResult("Good/Bad Lang Code", testResult);
+            }
+
+
+            // Test Reverse Translation
+            if (testAPI)
+            {
+                Console.WriteLine("\n==== Reverse Translation ====");
+                if (!adiIRC_DeepL_plugin.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan));
+                string translation = await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
+                if (translation.Equals("Il s'agit d'un test.|This is a test.")) testResult = true;
+                else testResult = false;
+                PrintTestResult("Reverse Translation", testResult);
             }
 
 

@@ -36,16 +36,14 @@
     {
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
         public int retries = 0;
-        public IWindow window;   // The window to output translated messages into.
 
-        public monitorItem(string nickname, string cmdr, IWindow window, string langcode = "EN", string platform = "")
+        public monitorItem(string nickname, string cmdr, string langcode = "EN", string platform = "")
         {
             //A case object, keeping track of a client's nick, cmdr, platform, and channel window
             this.nickname = nickname;
             this.cmdr = cmdr;
             this.langcode = langcode;
             this.platform = platform; //for future use, maybe
-            this.window = window;
         }
     }
     public class deepl_config_items
@@ -53,14 +51,14 @@
         public string apikey;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
-        public bool reverseTranslate;
+        public List<string> channel_monitor_items;
 
         public deepl_config_items()
         {
             removePartingNicknames = false;
-            reverseTranslate = false;
             apikey = "";
             lang_no_translation = new List<string>();
+            channel_monitor_items = new List<string>();
         }
     }
 
@@ -80,8 +78,8 @@
         private string deepl_config_file;
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
-        private List<IWindow> channel_monitor_items;
         private static bool drillmode = false, debugmode = false, reverseTranslate = false;
+
 
         /// <summary>
         /// If debugmode = true, print the message to the active window
@@ -102,6 +100,7 @@
         {
             if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + string.Format(message, formatArgs));
         }
+
         /// <summary>
         /// Writes changes to deepl.conf stored in %appdatalocal%\AdiIRC
         /// </summary>
@@ -117,6 +116,7 @@
                 adihost.ActiveIWindow.OutputText(e.ToString());
             }
         }
+
 
         /// <summary>
         /// Reads JSON config file from %appdatalocal%\AdiIRC
@@ -261,11 +261,12 @@
         private void deepl_mon(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, argument.Window, langcode: "ZZ");
+            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: "ZZ");
 
             if (!IsNickMonitored(allarguments))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
         }
+
 
         /// <summary>
         /// Removes a user nick from the monitor list.
@@ -311,9 +312,10 @@
         /// <param name="argument">Current Channel</param>
         private void deepl_auto_case(RegisteredCommandArgs argument)
         {
-            if (!channel_monitor_items.Contains(argument.Window))
+            if (!config_items.channel_monitor_items.Contains(argument.Window.Name))
             {
-                channel_monitor_items.Add(argument.Window);
+                config_items.channel_monitor_items.Add(argument.Window.Name);
+                save_config_items();
             }
         }
 
@@ -327,7 +329,8 @@
             for (int i = 0; i < 10; i++)
                 monitor_items.Add(null);
 
-            channel_monitor_items.Clear();
+            config_items.channel_monitor_items.Clear();
+            save_config_items();
         }
 
         /// <summary>
@@ -406,12 +409,12 @@
             int index = 0;
             foreach (monitorItem item in monitor_items)
             {
-                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}, Channel: {3}", index, item.nickname, item.langcode, item.window.Name));
+                if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}", index, item.nickname, item.langcode));
                 index++;
             }
-            foreach (IWindow window in channel_monitor_items)
+            foreach (string channelName in config_items.channel_monitor_items)
             {
-                adihost.ActiveIWindow.OutputText("Monitored Channel: " + window.Name);
+                adihost.ActiveIWindow.OutputText("Monitored Channel: " + channelName);
             }
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
             adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
@@ -447,7 +450,6 @@
         /// <param name="message"></param>
         private void OnChannelNormalMessage(ChannelNormalMessageArgs message)
         {
-
             IChannel channel = message.Channel;
 
             // If Mecha or DrillSqueak say anyting
@@ -457,7 +459,7 @@
             {
                 // If channel is being monitored
                 PrintDebug("Matched Bot");
-                if (channel_monitor_items.Contains(channel))
+                if (config_items.channel_monitor_items.Contains(channel.Name))
                 {
                     // Identify Ratsignal or Drillsignal
                     PrintDebug("Matched Channel");
@@ -491,12 +493,12 @@
                                 if (match.Groups["nickname"].Success)
                                 {
                                     string nick = match.Groups["nickname"].Value;
-                                    monitor_items[caseNum] = new monitorItem(nick, cmdr, channel, langcode: langcode);
+                                    monitor_items[caseNum] = new monitorItem(nick, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + nick);
                                 }
                                 else
                                 {
-                                    monitor_items[caseNum] = new monitorItem(cmdr, cmdr, channel, langcode: langcode);
+                                    monitor_items[caseNum] = new monitorItem(cmdr, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + cmdr);
                                 }
                             }
@@ -594,6 +596,7 @@
                         monitor_items.RemoveAt(index);
             }
         }
+
         /// <summary>
         /// When a user /parts, check if we need to stop monitoring
         /// Only autoremoves manually added nicks(use /deepl-rm to force remove a case)
@@ -626,7 +629,7 @@
             monitor_items = new List<monitorItem>();
             for (int i = 0; i < 20; i++)
                 monitor_items.Add(null);
-            channel_monitor_items = new List<IWindow>();
+
             load_config_items();
             adihost.HookCommand("/dl-api", set_DeepL_ApiKey);
             adihost.HookCommand("/dl-en", deepl_en);

@@ -37,6 +37,15 @@ namespace adiIRC_DeepL_plugin_test
         }
     }
 
+    public class IServer
+    {
+        public List<IChannel> Channels;
+        public IServer(List<IChannel> channels)
+        {
+            Channels = channels;
+        }
+    }
+
     public class IChannel : IWindow
     {
         public static string windowName;
@@ -60,10 +69,12 @@ namespace adiIRC_DeepL_plugin_test
 
         public IWindow ActiveIWindow;
         public string ConfigFolder;
-        public IPluginHost(IWindow activeIWindow, string configFolder)
+        public List<IServer> GetServers;
+        public IPluginHost(IWindow activeIWindow, string configFolder, List<IServer> getServers)
         {
             ActiveIWindow = activeIWindow;
             ConfigFolder = configFolder;
+            GetServers = getServers;
         }
     }
 

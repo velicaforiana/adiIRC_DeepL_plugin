@@ -456,13 +456,28 @@
                 if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}", index, item.nickname, item.langcode));
                 index++;
             }
+
+            string monitoredChannels = "";
             foreach (string channelName in config_items.channel_monitor_items)
             {
-                adihost.ActiveIWindow.OutputText("Monitored Channel: " + channelName);
+                monitoredChannels += channelName + ", ";
             }
+            monitoredChannels = monitoredChannels.TrimEnd(' ', ',');
+
+            string excludedLangs = "";
+            foreach (string lang in config_items.lang_no_translation)
+            {
+                excludedLangs += lang + ", ";
+            }
+            excludedLangs = excludedLangs.TrimEnd(' ', ',');
+
+            adihost.ActiveIWindow.OutputText("Native Language: " + config_items.native_lang);
+            adihost.ActiveIWindow.OutputText("Monitored Channels: " + monitoredChannels);
+            adihost.ActiveIWindow.OutputText("Excluded Languages: " + excludedLangs);
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
             adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
+            adihost.ActiveIWindow.OutputText("Debugmode: " + debugmode);
         }
 
         private void deepl_help(RegisteredCommandArgs argument)

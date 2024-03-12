@@ -267,13 +267,17 @@
             string lang = allarguments.Substring(0, 2).ToUpper();
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate(lang, totranslate);
-            argument.Window.Editbox.Text = translation.text;
 
-            deepl_translation reverseTranslation = null;
-            if (reverseTranslate)
-            {
-                reverseTranslation = await deepl_translate("EN", translation.text, lang);
-                argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+            if (translation != null)
+            {  //translation failure
+                argument.Window.Editbox.Text = translation.text;
+
+                deepl_translation reverseTranslation = null;
+                if (reverseTranslate)
+                {
+                    reverseTranslation = await deepl_translate("EN", translation.text, lang);
+                    argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+                }
             }
         }
 
@@ -541,7 +545,7 @@
                     if (!langcode.Equals("EN") && !config_items.lang_no_translation.Contains(langcode))
                     {
                         PrintDebug("Translating {0}'s message - {1}", message.User.Nick, message.Message);
-                        deepl_translate_towindow("EN", message.Message, channel, message.User.Nick);
+                        deepl_translate_towindow("EN", message.Message, channel, monitor_items[index]);
                     }
                 }
             }

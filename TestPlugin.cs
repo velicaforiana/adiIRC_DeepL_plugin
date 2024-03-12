@@ -257,10 +257,10 @@ namespace adiIRC_DeepL_plugin_test
         /// Translates any language into English
         /// </summary>
         /// <param name="argument">Message to translate</param>
-        public void deepl_en(RegisteredCommandArgs argument)
+        public async void deepl_en(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            deepl_translate_towindow("EN", allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
+            await deepl_translate_towindow("EN", allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
         }
 
         /// <summary>
@@ -274,20 +274,22 @@ namespace adiIRC_DeepL_plugin_test
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation == null) return ""; //translation failure
+            if (translation == null)
+            {  //translation failure
 
-            argument.Window.Editbox.Text = translation.text;
+                argument.Window.Editbox.Text = translation.text;
 
-            deepl_translation reverseTranslation = null;
-            if (reverseTranslate)
-            {
-                reverseTranslation = await deepl_translate("EN", translation.text, lang);
-                argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+                deepl_translation reverseTranslation = null;
+                if (reverseTranslate)
+                {
+                    reverseTranslation = await deepl_translate("EN", translation.text, lang);
+                    argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+                }
+
+                // return type changd for debug and unit test purposes
+                if (reverseTranslate && reverseTranslation != null)
+                    return translation.text + "|" + reverseTranslation.text;
             }
-
-            // return type changd for debug and unit test purposes
-            if (reverseTranslate && reverseTranslation != null)
-                return translation.text + "|" + reverseTranslation.text;
             return translation.text;
         }
 

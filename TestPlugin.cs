@@ -176,7 +176,7 @@ namespace adiIRC_DeepL_plugin_test
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);
                     dict.Add("target_lang", lang);
-                    if(!string.IsNullOrEmpty(sourceLang)) dict.Add("source_lang", sourceLang);
+                    if (!string.IsNullOrEmpty(sourceLang)) dict.Add("source_lang", sourceLang);
                     requestMessage.Headers.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
                     requestMessage.Headers.Authorization = new AuthenticationHeaderValue("DeepL-Auth-Key", config_items.apikey);
                     requestMessage.Content = new FormUrlEncodedContent(dict);
@@ -218,7 +218,7 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="lang">Rat's language, usually EN</param>
         /// <param name="totranslate">Message to translate</param>
         /// <param name="window">Window to post message</param>
-        /// <param name="fromUser">Client's nick</param>
+        /// <param name="fromUser">User's MonitorItem</param>
         public async Task<string> deepl_translate_towindow(string lang, string totranslate, IWindow window, monitorItem fromUser) //return string for test validation purposes
         {
             deepl_translation translation;
@@ -249,6 +249,7 @@ namespace adiIRC_DeepL_plugin_test
                 fromUser.retries = 0;
             window.OutputText(fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text);
 
+            // TEST PURPOSES ONLY
             return fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text; // FOR TEST ONLY
         }
     
@@ -286,10 +287,11 @@ namespace adiIRC_DeepL_plugin_test
                     argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
                 }
 
-                // return type changd for debug and unit test purposes
+                // TEST PURPOSES ONLY
                 if (reverseTranslate && reverseTranslation != null)
                     return translation.text + "|" + reverseTranslation.text;
             }
+            // TEST PURPOSES ONLY
             return translation.text;
         }
 

@@ -520,11 +520,22 @@
                                 if (match.Groups["nickname"].Success)
                                 {
                                     string nick = match.Groups["nickname"].Value;
+
+                                    // check if repeat client
+                                    int index;
+                                    if (IsNickMonitored(nick, out index))
+                                        monitor_items[index] = null;
+
                                     monitor_items[caseNum] = new monitorItem(nick, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + nick);
                                 }
                                 else
                                 {
+                                    // check if repeat client
+                                    int index;
+                                    if (IsNickMonitored(cmdr, out index))
+                                        monitor_items[index] = null;
+
                                     monitor_items[caseNum] = new monitorItem(cmdr, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + cmdr);
                                 }

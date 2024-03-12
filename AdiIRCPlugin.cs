@@ -439,7 +439,7 @@
                 debugmode = !debugmode;
 
                 // print drillmode state after switch
-                if (drillmode) adihost.ActiveIWindow.OutputText("DebugMode™ Enabled!");
+                if (debugmode) adihost.ActiveIWindow.OutputText("DebugMode™ Enabled!");
                 else adihost.ActiveIWindow.OutputText("DebugMode™ Disabled.");
             }
         }

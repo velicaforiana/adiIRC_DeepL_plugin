@@ -275,7 +275,7 @@ namespace adiIRC_DeepL_plugin_test
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation == null)
+            if (translation != null)
             {  //translation failure
 
                 argument.Window.Editbox.Text = translation.text;
@@ -290,9 +290,11 @@ namespace adiIRC_DeepL_plugin_test
                 // TEST PURPOSES ONLY
                 if (reverseTranslate && reverseTranslation != null)
                     return translation.text + "|" + reverseTranslation.text;
+
+                // TEST PURPOSES ONLY
+                return translation.text;
             }
-            // TEST PURPOSES ONLY
-            return translation.text;
+            return "";
         }
 
         /// <summary>

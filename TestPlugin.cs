@@ -83,6 +83,7 @@ namespace adiIRC_DeepL_plugin_test
         public deepl_config_items config_items;
         public List<monitorItem> monitor_items;
         public static bool drillmode = false, debugmode = false, reverseTranslate = false;
+        public const string NO_LANG = "ZZ";
 
         /// <summary>
         /// If debugmode = true, print the message to the active window
@@ -162,8 +163,9 @@ namespace adiIRC_DeepL_plugin_test
         /// </summary>
         /// <param name="lang">Target Language</param>
         /// <param name="totranslate">Message to translate</param>
+        /// <param name="sourceLang">(Optional) Tell DeepL source language for better short translations</param>
         /// <returns></returns>
-        public async Task<deepl_translation> deepl_translate_any(string lang, string totranslate, string nick="")
+        public async Task<deepl_translation> deepl_translate(string lang, string totranslate, string sourceLang="", bool shouldRetry=true)
         {
             try
             {
@@ -174,6 +176,7 @@ namespace adiIRC_DeepL_plugin_test
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);
                     dict.Add("target_lang", lang);
+                    if(!string.IsNullOrEmpty(sourceLang)) dict.Add("source_lang", sourceLang);
                     requestMessage.Headers.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
                     requestMessage.Headers.Authorization = new AuthenticationHeaderValue("DeepL-Auth-Key", config_items.apikey);
                     requestMessage.Content = new FormUrlEncodedContent(dict);
@@ -184,11 +187,20 @@ namespace adiIRC_DeepL_plugin_test
                     deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
                     if (response.IsSuccessStatusCode)
                     {
+
+                        // If the sourceLang was incorrect, toTranslate and the translation will be the same, re-run the translation with no langcode
+                        if (jsonResponse.translations[0].text.Equals(totranslate))
+                        {
+                            // If this is the second attempt, or retrying is otherwise disabled, stop trying
+                            if (!shouldRetry) return null;
+                            return await deepl_translate(lang, totranslate, shouldRetry: false);
+                        }
                         return jsonResponse.translations[0];
                     }
                     else
                     {
                         adihost.ActiveIWindow.OutputText(jsonResponse.message);
+                        if (jsonResponse.message.Contains("not supported")) return null;
                     }
                 }
             }
@@ -199,33 +211,47 @@ namespace adiIRC_DeepL_plugin_test
             return new deepl_translation();
         }
 
+
         /// <summary>
         /// Calls deepl_translate_any to translate a client's message and print it in the same window
         /// </summary>
         /// <param name="lang">Rat's language, usually EN</param>
         /// <param name="totranslate">Message to translate</param>
         /// <param name="window">Window to post message</param>
-        /// <param name="fromNick">Client's nick</param>
-        public async void deepl_translate_towindow(string lang, string totranslate, IWindow window, string fromNick)
+        /// <param name="fromUser">Client's nick</param>
+        public async Task<string> deepl_translate_towindow(string lang, string totranslate, IWindow window, monitorItem fromUser) //return string for test validation purposes
         {
-            deepl_translation translation = await deepl_translate_any(lang, totranslate);
-            int index;
-            if (IsNickMonitored(fromNick, out index))
+            deepl_translation translation;
+            //Try to use the detect langcode from the user
+            if (!fromUser.langcode.Equals(NO_LANG)) translation = await deepl_translate(lang, totranslate, fromUser.langcode);
+            else translation = await deepl_translate(lang, totranslate);
+            
+            //If the detected langcode was EN, or translation is empty (failed), start to disable auto-translation
+            if (translation == null || translation.detected_source_language.Equals("EN") || (string.IsNullOrEmpty(translation.detected_source_language) && string.IsNullOrEmpty(translation.text)))
             {
-                if (!string.IsNullOrEmpty(fromNick) && translation.detected_source_language.Equals("EN"))
+                fromUser.retries++;
+                PrintDebug("Translation failure. Increasing {0} retry count to {1}.", fromUser.nickname, fromUser.retries + "");
+                if (fromUser.retries >= 3)
                 {
-                    monitor_items[index].retries++;
-                    if (monitor_items[index].retries >= 3)
-                    {
-                        monitor_items[index].langcode = "EN";
-                        PrintDebug("Set user {0} to English.", monitor_items[index].nickname);
-                    }
+                    fromUser.langcode = "EN";
+                    PrintDebug("Set user {0} to English.", fromUser.nickname);
                 }
-                else
-                    monitor_items[index].retries = 0;
+                return "";
             }
-            window.OutputText(fromNick + "(" + translation.detected_source_language + "): " + translation.text);
+            //If the translation returns with a different langcode, update user's langcode
+            else if (!translation.detected_source_language.Equals(fromUser.langcode))
+            {
+                PrintDebug("Changing {0}'s langcode to detected: {1}", fromUser.nickname, translation.detected_source_language);
+                fromUser.langcode = translation.detected_source_language;
+                fromUser.retries = 0;
+            }
+            else
+                fromUser.retries = 0;
+            window.OutputText(fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text);
+
+            return fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text; // FOR TEST ONLY
         }
+    
 
         /// <summary>
         /// Translates any language into English
@@ -234,7 +260,7 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_en(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            deepl_translate_towindow("EN", allarguments, argument.Window, "yourself");
+            deepl_translate_towindow("EN", allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
         }
 
         /// <summary>
@@ -246,13 +272,16 @@ namespace adiIRC_DeepL_plugin_test
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             string lang = allarguments.Substring(0, 2).ToUpper();
             string totranslate = allarguments.Substring(3);
-            deepl_translation translation = await deepl_translate_any(lang, totranslate);
+            deepl_translation translation = await deepl_translate(lang, totranslate);
+
+            if (translation == null) return ""; //translation failure
+
             argument.Window.Editbox.Text = translation.text;
 
             deepl_translation reverseTranslation = null;
             if (reverseTranslate)
             {
-                reverseTranslation = await deepl_translate_any("EN", translation.text);
+                reverseTranslation = await deepl_translate("EN", translation.text, lang);
                 argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
             }
 
@@ -269,7 +298,7 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_mon(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: "ZZ");
+            monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: NO_LANG);
 
             if (!IsNickMonitored(allarguments))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
@@ -456,7 +485,7 @@ namespace adiIRC_DeepL_plugin_test
         /// user's message.
         /// </summary>
         /// <param name="message"></param>
-        public void OnChannelNormalMessage(ChannelNormalMessageArgs message)
+        public string OnChannelNormalMessage(ChannelNormalMessageArgs message)
         {
             IChannel channel = message.Channel;
 
@@ -526,10 +555,11 @@ namespace adiIRC_DeepL_plugin_test
                     if (!langcode.Equals("EN") && !config_items.lang_no_translation.Contains(langcode))
                     {
                         PrintDebug("Translating {0}'s message - {1}", message.User.Nick, message.Message);
-                        deepl_translate_towindow("EN", message.Message, channel, message.User.Nick);
+                        return deepl_translate_towindow("EN", message.Message, channel, monitor_items[index]).Result;
                     }
                 }
             }
+            return "";
         }
 
         /// <summary>

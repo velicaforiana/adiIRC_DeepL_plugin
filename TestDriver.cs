@@ -41,7 +41,7 @@ namespace adiIRC_DeepL_plugin_test
             }
 
             bool testResult = false;
-            bool testAPI = false; // flip this switch to test API calls, keep off to save API usage
+            bool testAPI = true; // flip this switch to test API calls, keep off to save API usage
 
             // Test enabling debugmode
             testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));
@@ -87,8 +87,8 @@ namespace adiIRC_DeepL_plugin_test
 
 
             // Test RU ratsignal
-            Console.WriteLine("\n==== Autodetect RU Case ====");
-            rsig = "RATSIGNAL Case #5 PC HOR – CMDR Delryn – System: \"SECTOR RU-C A14 - 2\" (Unconfirmed) – Language: Russian (Russia) (ru-RU) (HOR_SIGNAL)";
+            Console.WriteLine("\n==== Autodetect FR Case ====");
+            rsig = "RATSIGNAL Case #5 PC HOR – CMDR Delryn – System: \"BLEIA EOHN QB - Y B48 - 2\" (2,791.5 LY \"North - west\" of Sol) – Language: French (France) (fr-FR) (ODY_SIGNAL)";
             ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
             ratsignal.User.Nick = "MechaSqueak[BOT]";
             testPlugin.OnChannelNormalMessage(ratsignal);
@@ -96,13 +96,54 @@ namespace adiIRC_DeepL_plugin_test
             // Check if case was onboarded into correct monitor_items slot
             if (testPlugin.monitor_items[5] != null && 
                 testPlugin.monitor_items[5].nickname.Equals("Delryn") &&
-                testPlugin.monitor_items[5].langcode.Equals("RU")) testResult = true;
+                testPlugin.monitor_items[5].langcode.Equals("FR")) testResult = true;
             else testResult = false;
-            PrintTestResult("RU Rsig Autodetect", testResult);
+            PrintTestResult("FR Rsig Autodetect", testResult);
+
+            ChannelNormalMessageArgs userMessage;
+
+            // Test user monitor
+            if (testAPI)
+            {
+                Console.WriteLine("\n==== Monitor Auto Translations ====");
+
+                userMessage = new ChannelNormalMessageArgs("Il s'agit d'un test.", fuelratsChan);
+                userMessage.User.Nick = "Delryn";
+                string translation = testPlugin.OnChannelNormalMessage(userMessage);
+                System.Threading.Thread.Sleep(1000);
+                if (translation.Equals("Delryn(FR): This is a test.")) testResult = true;
+                else testResult = false;
+                PrintTestResult("Expected FR -> EN Translation", testResult);
+
+                userMessage.Message = "Dies ist ein Test.";
+                translation = testPlugin.OnChannelNormalMessage(userMessage);
+                System.Threading.Thread.Sleep(2000);
+                if (translation.Equals("Delryn(DE): This is a test.")) testResult = true;
+                else testResult = false;
+                PrintTestResult("Unexpected DE -> EN Translation", testResult);
+
+
+                userMessage.Message = "asdgahwe;roghl;oiyh2p98";
+                testPlugin.monitor_items[5].retries = 0;
+                translation = testPlugin.OnChannelNormalMessage(userMessage);
+                System.Threading.Thread.Sleep(2000);
+                if (testPlugin.monitor_items[5].retries == 1) testResult = true;
+                else testResult = false;
+                PrintTestResult("Garbage Translation", testResult);
+
+
+                testPlugin.monitor_items[5].langcode = "XY";
+                userMessage.Message = "Dies ist ein Test.";
+                translation = testPlugin.OnChannelNormalMessage(userMessage);
+                System.Threading.Thread.Sleep(1000);
+                if (testPlugin.monitor_items[5].retries == 2) testResult = true;
+                else testResult = false;
+                PrintTestResult("Bad langcode", testResult);
+            }
 
 
             // Test auto EN
-            ChannelNormalMessageArgs userMessage = new ChannelNormalMessageArgs("This is a test.", fuelratsChan);
+            userMessage = new ChannelNormalMessageArgs("This is a test.", fuelratsChan);
             if (false)
             {
                 Console.WriteLine("\n==== AutoStop Translations ====");
@@ -119,6 +160,7 @@ namespace adiIRC_DeepL_plugin_test
                 else testResult = false;
                 PrintTestResult("Auto Stop Translate", testResult);
             }
+
 
             // Test case remove
             Console.WriteLine("\n==== /dl-rm by case number ====");
@@ -156,7 +198,7 @@ namespace adiIRC_DeepL_plugin_test
             {
                 Console.WriteLine("\n==== Good and Bad Lang Code ====");
                 string success = await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
-                string failure = await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
+                string failure = await testPlugin.deepl_any(new RegisteredCommandArgs("_ XY This is a test.", fuelratsChan));
                 if (success.Equals("Il s'agit d'un test.") && String.IsNullOrEmpty(failure)) testResult = true;
                 else testResult = false;
                 PrintTestResult("Good/Bad Lang Code", testResult);

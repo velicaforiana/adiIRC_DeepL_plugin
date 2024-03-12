@@ -37,7 +37,7 @@
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
         public int retries = 0;
 
-        public monitorItem(string nickname, string cmdr, string langcode = "EN", string platform = "")
+        public monitorItem(string nickname, string cmdr, string langcode = "ZZ", string platform = "")
         {
             //A case object, keeping track of a client's nick, cmdr, platform, and channel window
             this.nickname = nickname;
@@ -48,7 +48,7 @@
     }
     public class deepl_config_items
     {
-        public string apikey;    // Api Key sent with all deepl calls
+        public string apikey, native_lang;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
@@ -57,6 +57,7 @@
         {
             removePartingNicknames = false;
             apikey = "";
+            native_lang = "EN";
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
         }
@@ -223,13 +224,13 @@
             else translation = await deepl_translate(lang, totranslate);
 
             //If the detected langcode was EN, or translation is empty (failed), start to disable auto-translation
-            if (translation == null || translation.detected_source_language.Equals("EN") || (string.IsNullOrEmpty(translation.detected_source_language) && string.IsNullOrEmpty(translation.text)))
+            if (translation == null || translation.detected_source_language.Equals(config_items.native_lang) || (string.IsNullOrEmpty(translation.detected_source_language) && string.IsNullOrEmpty(translation.text)))
             {
                 fromUser.retries++;
                 PrintDebug("Translation failure. Increasing {0} retry count to {1}.", fromUser.nickname, fromUser.retries + "");
                 if (fromUser.retries >= 3)
                 {
-                    fromUser.langcode = "EN";
+                    fromUser.langcode = config_items.native_lang;
                     PrintDebug("Set user {0} to English.", fromUser.nickname);
                 }
                 return;
@@ -254,7 +255,7 @@
         private void deepl_en(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            deepl_translate_towindow("EN", allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
+            deepl_translate_towindow(config_items.native_lang, allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
         }
 
         /// <summary>
@@ -268,14 +269,14 @@
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation != null)
-            {  //translation failure
+            if (translation != null) // check for translation failure
+            {  
                 argument.Window.Editbox.Text = translation.text;
 
                 deepl_translation reverseTranslation = null;
                 if (reverseTranslate)
                 {
-                    reverseTranslation = await deepl_translate("EN", translation.text, lang);
+                    reverseTranslation = await deepl_translate(config_items.native_lang, translation.text, lang);
                     argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
                 }
             }
@@ -360,33 +361,15 @@
             save_config_items();
         }
 
-        /// <summary>
-        /// Excludes certain languages from being auto translated
-        /// Useful if the rat speaks multiple languages
-        /// </summary>
-        /// <param name="argument">no args</param>
-        private void deepl_exclude(RegisteredCommandArgs argument)
-        {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            string langcode = allarguments.ToUpper();
-            if (!config_items.lang_no_translation.Contains(langcode))
-            {
-                config_items.lang_no_translation.Add(langcode);
-                save_config_items();
-            }
-        }
 
         /// <summary>
         /// Sets certain parameters in configuration
-        /// keepNicks - Keep monitoring for nicks even if target disconnects
-        /// removeNicks - Stop monitoring for nicks when they disconnect
-        /// drillmode - toggles between listening for MechaSqueak or DrillSqueak
         /// </summary>
         /// <param name="argument">keepNicks/removeNicks/drillmode</param>
         private void deepl_set(RegisteredCommandArgs argument)
         {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            if (allarguments.Equals("autoRemoveNicks"))
+            string[] allarguments = argument.Command.Split(' ');
+            if (allarguments[0].Equals("autoRemoveNicks"))
             {
                 config_items.removePartingNicknames = !config_items.removePartingNicknames;
                 // print drillmode state after switch
@@ -396,7 +379,7 @@
                 save_config_items();
             }
 
-            if (allarguments.Equals("reverseTranslate"))
+            if (allarguments[0].Equals("reverseTranslate"))
             {
                 reverseTranslate = !reverseTranslate;
                 // print drillmode state after switch
@@ -406,7 +389,34 @@
                 save_config_items();
             }
 
-            if (allarguments.Equals("drillmode"))
+            if (allarguments[0].Equals("native"))
+            {
+                if (allarguments.Length > 1)
+                {
+                    string langcode = allarguments[1].ToUpper();
+                    config_items.native_lang = langcode;
+                    save_config_items();
+                }
+                else
+                    adihost.ActiveIWindow.OutputText("Error: 'native' setting requires language code argument");
+            }
+
+            if (allarguments[0].Equals("exclude"))
+            {
+                if (allarguments.Length > 1)
+                {
+                    string langcode = allarguments[1].ToUpper();
+                    if (!config_items.lang_no_translation.Contains(langcode))
+                    {
+                        config_items.lang_no_translation.Add(langcode);
+                        save_config_items();
+                    }
+                }
+                else
+                    adihost.ActiveIWindow.OutputText("Error: 'exclude' setting requires language code argument");
+            }
+
+            if (allarguments[0].Equals("drillmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 drillmode = !drillmode;
@@ -416,7 +426,7 @@
                 else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
 
-            if (allarguments.Equals("debugmode"))
+            if (allarguments[0].Equals("debugmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 debugmode = !debugmode;
@@ -454,17 +464,18 @@
             adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
-            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
-            adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies fuelrat cases announced by MechaSqueak in the active channel and add them to the monitor list");
-            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
-            adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
-            adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits");
-            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (memory) toggles a reverse translation of /dl-any");
-            adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
-            adihost.ActiveIWindow.OutputText("     debugmode        -> (memory) toggles extra debug messages during operations");
-            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
+            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
+            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin");
+            adihost.ActiveIWindow.OutputText("  exclude <langcode>  -> (config) add language to list that should not be auto-translated");
+            adihost.ActiveIWindow.OutputText("  native <langcode>   -> (config) change native langauge (default: EN)");
+            adihost.ActiveIWindow.OutputText("  autoRemoveNicks     -> (config) toggles auto removal of non-case nicks on parts or quits");
+            adihost.ActiveIWindow.OutputText("  reverseTranslate    -> (memory) toggles a reverse translation of /dl-any");
+            adihost.ActiveIWindow.OutputText("  drillmode           -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
+            adihost.ActiveIWindow.OutputText("  debugmode           -> (memory) toggles extra debug messages during operations");
+            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 
@@ -543,10 +554,10 @@
                 {
                     // check if case lang is EN or on the exclude list
                     string langcode = monitor_items[index].langcode;
-                    if (!langcode.Equals("EN") && !config_items.lang_no_translation.Contains(langcode))
+                    if (!langcode.Equals(config_items.native_lang) && !config_items.lang_no_translation.Contains(langcode))
                     {
                         PrintDebug("Translating {0}'s message - {1}", message.User.Nick, message.Message);
-                        deepl_translate_towindow("EN", message.Message, channel, monitor_items[index]);
+                        deepl_translate_towindow(config_items.native_lang, message.Message, channel, monitor_items[index]);
                     }
                 }
             }
@@ -666,7 +677,6 @@
             adihost.HookCommand("/dl-rm", deepl_rm);
             adihost.HookCommand("/dl-mecha", deepl_auto_case);
             adihost.HookCommand("/dl-clear", deepl_clearmon);
-            adihost.HookCommand("/dl-exclude", deepl_exclude);
             adihost.HookCommand("/dl-set", deepl_set);
             adihost.HookCommand("/dl-debug", deepl_debug);
             adihost.HookCommand("/dl-help", deepl_help);

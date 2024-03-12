@@ -42,6 +42,7 @@ namespace adiIRC_DeepL_plugin_test
 
             bool testResult = false;
             bool testAPI = true; // flip this switch to test API calls, keep off to save API usage
+            testPlugin.deepl_set(new RegisteredCommandArgs("native EN", fuelratsChan));
 
             // Test enabling debugmode
             testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));
@@ -214,6 +215,21 @@ namespace adiIRC_DeepL_plugin_test
                 if (translation.Equals("Il s'agit d'un test.|This is a test.")) testResult = true;
                 else testResult = false;
                 PrintTestResult("Reverse Translation", testResult);
+
+                testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan)); //turn off again
+            }
+
+
+            // Test Native Lang Change
+            if (testAPI)
+            {
+                Console.WriteLine("\n==== Native Language Change ====");
+                testPlugin.deepl_set(new RegisteredCommandArgs("native DE", fuelratsChan));
+                string translation = await testPlugin.deepl_en(new RegisteredCommandArgs("_ This is a test.", fuelratsChan));
+                if (translation.Equals("Yourself(EN): Dies ist ein Test.")) testResult = true;
+                else testResult = false;
+                PrintTestResult("Native Language Change", testResult);
+
             }
 
 

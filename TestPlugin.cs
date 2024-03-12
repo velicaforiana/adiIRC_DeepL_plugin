@@ -384,7 +384,7 @@ namespace adiIRC_DeepL_plugin_test
         public void deepl_set(RegisteredCommandArgs argument)
         {
             string[] allarguments = argument.Command.Split(' ');
-            if (allarguments[0].Equals("autoRemoveNicks"))
+            if (allarguments[1].Equals("autoRemoveNicks"))
             {
                 config_items.removePartingNicknames = !config_items.removePartingNicknames;
                 // print drillmode state after switch
@@ -394,7 +394,7 @@ namespace adiIRC_DeepL_plugin_test
                 save_config_items();
             }
 
-            if (allarguments[0].Equals("reverseTranslate"))
+            if (allarguments[1].Equals("reverseTranslate"))
             {
                 reverseTranslate = !reverseTranslate;
                 // print drillmode state after switch
@@ -404,11 +404,11 @@ namespace adiIRC_DeepL_plugin_test
                 save_config_items();
             }
 
-            if (allarguments[0].Equals("native"))
+            if (allarguments[1].Equals("native"))
             {
-                if (allarguments.Length > 1)
+                if (allarguments.Length > 2)
                 {
-                    string langcode = allarguments[1].ToUpper();
+                    string langcode = allarguments[2].ToUpper();
                     config_items.native_lang = langcode;
                     save_config_items();
                 }
@@ -416,22 +416,28 @@ namespace adiIRC_DeepL_plugin_test
                     adihost.ActiveIWindow.OutputText("Error: 'native' setting requires language code argument");
             }
 
-            if (allarguments[0].Equals("exclude"))
+            if (allarguments[1].Equals("exclude"))
             {
-                if (allarguments.Length > 1)
+                if (allarguments.Length > 2)
                 {
-                    string langcode = allarguments[1].ToUpper();
+                    string langcode = allarguments[2].ToUpper();
                     if (!config_items.lang_no_translation.Contains(langcode))
                     {
                         config_items.lang_no_translation.Add(langcode);
-                        save_config_items();
+                        adihost.ActiveIWindow.OutputText(String.Format("Langcode '{0}' added to exclude list.", langcode));
                     }
+                    else
+                    {
+                        config_items.lang_no_translation.Remove(langcode);
+                        adihost.ActiveIWindow.OutputText(String.Format("Langcode '{0}' removed from exclude list.", langcode));
+                    }
+                    save_config_items();
                 }
                 else
                     adihost.ActiveIWindow.OutputText("Error: 'exclude' setting requires language code argument");
             }
 
-            if (allarguments[0].Equals("drillmode"))
+            if (allarguments[1].Equals("drillmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 drillmode = !drillmode;
@@ -441,7 +447,7 @@ namespace adiIRC_DeepL_plugin_test
                 else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
 
-            if (allarguments[0].Equals("debugmode"))
+            if (allarguments[1].Equals("debugmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 debugmode = !debugmode;
@@ -479,18 +485,18 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
-            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
-            adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies fuelrat cases announced by MechaSqueak in the active channel and add them to the monitor list");
-            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
-            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
-            adihost.ActiveIWindow.OutputText("     exclude <langcode>  -> (config) add language to list of languages that should not be auto-translated");
-            adihost.ActiveIWindow.OutputText("     native <langcode>   -> (config) change native langauge (default: EN)");
-            adihost.ActiveIWindow.OutputText("     autoRemoveNicks     -> (config) toggles auto removal of non-case nicks when nick parts or quits");
-            adihost.ActiveIWindow.OutputText("     reverseTranslate    -> (memory) toggles a reverse translation of /dl-any");
-            adihost.ActiveIWindow.OutputText("     drillmode           -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
-            adihost.ActiveIWindow.OutputText("     debugmode           -> (memory) toggles extra debug messages during operations");
-            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
+            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
+            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin");
+            adihost.ActiveIWindow.OutputText("  exclude <langcode>  -> (config) add/remove language on list that should not be auto-translated");
+            adihost.ActiveIWindow.OutputText("  native <langcode>   -> (config) change native langauge (default: EN)");
+            adihost.ActiveIWindow.OutputText("  autoRemoveNicks     -> (config) toggles auto removal of non-case nicks on parts or quits");
+            adihost.ActiveIWindow.OutputText("  reverseTranslate    -> (memory) toggles a reverse translation of /dl-any");
+            adihost.ActiveIWindow.OutputText("  drillmode           -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
+            adihost.ActiveIWindow.OutputText("  debugmode           -> (memory) toggles extra debug messages during operations");
+            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 

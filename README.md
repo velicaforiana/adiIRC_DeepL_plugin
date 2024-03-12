@@ -153,7 +153,7 @@ Example usage:
 
 Use this command to toggle various options. Options labeled as "(config)" will be written to the deepl.conf file and remembered between Adi client. Options labeled as "(memory)" will be forgotten between Adi client restarts.
 
-- exclude <langcode> (config): For multi-lingual users, this will disable auto-translation for additional languages.
+- exclude <langcode> (config): For multi-lingual users, this will disable auto-translation for additional languages. Run this again to remove a language from the exclude list.
 - native <langcode> (config): Change native language from default English to another language.
 - autoRemoveNicks (config): When a monitored client leaves IRC, this will automatically remove them from monitoring. This does not apply to Fuel Rat case clients, monitored by /dl-mecha.
 - reverseTranslate (memory): When using /dl-any, this will additionally take the resulting translation, and feed it back to DeepL to translate the message back into English. The reverse translated English message will be printed to the Output Window. This can be useful when trying to communicate nuanced information, and helps the user check if their message was translated properly. Warning: This will increase translation character usage of the Free DeepL Account API.

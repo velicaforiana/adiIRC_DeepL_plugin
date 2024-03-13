@@ -37,13 +37,13 @@ Incoming cases and their language can be automatically identified and marked for
 # Usage
 
 --  
-**/dl-debug**
+**/dl-help**
 ```
-/dl-debug
+/dl-help
 Args:
  - None
 Example usage:
-/dl-debug
+/dl-help
 ```
 
 Prints man page.
@@ -70,7 +70,7 @@ Example usage:
 /dl-en Il s'agit d'un test.
 ```
 
-This will translate a message from any DeepL supported language to English, and print the resulting translation to the output window.
+This will translate a message from any DeepL supported language to user's native language, and print the resulting translation to the output window.
 
 --  
 **/dl-any**
@@ -83,7 +83,7 @@ Example usage:
 /dl-any FR This is a test
 ```
 
-Translates any language into a target language. Usually this will be your native language into a non-native language. "/dl-set reverseTranslate" can be used to enable this function to translate the resulting message back into English for inspection purposes.
+Translates any language into a target language. Usually this will be your native language into a non-native language. "/dl-set reverseTranslate" can be used to enable this function to translate the resulting message back into user's native language for inspection purposes.
 
 --  
 **/dl-mon**
@@ -136,33 +136,25 @@ Example usage:
 Clears all currently monitored users and channels.
 
 --  
-**/dl-exclude**
-```
-/dl-exclude <langcode>
-Args:
- - langcode: Two letter language code to NOT translate
-Example usage:
-/dl-exclude DE
-```
-
-Currently only for Fuel Rats use with autodetected cases. If you speak languages other than English, use this command to disable automatic translation for those languages.
-
---  
 **/dl-set**
 ```
 /dl-rm <option>
 Options:
+  exclude <langcode>  -> (config) add language to list that should not be auto-translated
+  native <langcode>   -> (config) change native langauge (default: EN)
   autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits
   reverseTranslate -> (memory) toggles a reverse translation of /dl-any
   drillmode        -> (memory) toggles whether to observe MechaSqueak or DrillSqueak
   debugmode        -> (memory) toggles extra debug messages during operations
 Example usage:
-/dl-set reverseTranslate
+/dl-set native DE
 /dl-set autoRemoveNicks
 ```
 
 Use this command to toggle various options. Options labeled as "(config)" will be written to the deepl.conf file and remembered between Adi client. Options labeled as "(memory)" will be forgotten between Adi client restarts.
 
+- exclude <langcode> (config): For multi-lingual users, this will disable auto-translation for additional languages. Run this again to remove a language from the exclude list.
+- native <langcode> (config): Change native language from default English to another language.
 - autoRemoveNicks (config): When a monitored client leaves IRC, this will automatically remove them from monitoring. This does not apply to Fuel Rat case clients, monitored by /dl-mecha.
 - reverseTranslate (memory): When using /dl-any, this will additionally take the resulting translation, and feed it back to DeepL to translate the message back into English. The reverse translated English message will be printed to the Output Window. This can be useful when trying to communicate nuanced information, and helps the user check if their message was translated properly. Warning: This will increase translation character usage of the Free DeepL Account API.
 - drillmode (memory): Fuel Rat Usage. Changes the plugin to monitor DrillSqueak instead of MechaSqueak. Used primarily for testing the plugin.

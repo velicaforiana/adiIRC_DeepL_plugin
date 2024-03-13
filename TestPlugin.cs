@@ -41,7 +41,7 @@ namespace adiIRC_DeepL_plugin_test
         public string nickname, cmdr, platform, langcode;  // The nickname to monitor
         public int retries = 0;
 
-        public monitorItem(string nickname, string cmdr, string langcode = "EN", string platform = "")
+        public monitorItem(string nickname, string cmdr, string langcode = "ZZ", string platform = "")
         {
             //A case object, keeping track of a client's nick, cmdr, platform, and channel window
             this.nickname = nickname;
@@ -52,7 +52,7 @@ namespace adiIRC_DeepL_plugin_test
     }
     public class deepl_config_items
     {
-        public string apikey;    // Api Key sent with all deepl calls
+        public string apikey, native_lang;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
@@ -61,6 +61,7 @@ namespace adiIRC_DeepL_plugin_test
         {
             removePartingNicknames = false;
             apikey = "";
+            native_lang = "EN";
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
         }
@@ -176,7 +177,7 @@ namespace adiIRC_DeepL_plugin_test
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);
                     dict.Add("target_lang", lang);
-                    if(!string.IsNullOrEmpty(sourceLang)) dict.Add("source_lang", sourceLang);
+                    if (!string.IsNullOrEmpty(sourceLang)) dict.Add("source_lang", sourceLang);
                     requestMessage.Headers.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
                     requestMessage.Headers.Authorization = new AuthenticationHeaderValue("DeepL-Auth-Key", config_items.apikey);
                     requestMessage.Content = new FormUrlEncodedContent(dict);
@@ -218,7 +219,7 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="lang">Rat's language, usually EN</param>
         /// <param name="totranslate">Message to translate</param>
         /// <param name="window">Window to post message</param>
-        /// <param name="fromUser">Client's nick</param>
+        /// <param name="fromUser">User's MonitorItem</param>
         public async Task<string> deepl_translate_towindow(string lang, string totranslate, IWindow window, monitorItem fromUser) //return string for test validation purposes
         {
             deepl_translation translation;
@@ -227,13 +228,13 @@ namespace adiIRC_DeepL_plugin_test
             else translation = await deepl_translate(lang, totranslate);
             
             //If the detected langcode was EN, or translation is empty (failed), start to disable auto-translation
-            if (translation == null || translation.detected_source_language.Equals("EN") || (string.IsNullOrEmpty(translation.detected_source_language) && string.IsNullOrEmpty(translation.text)))
+            if (translation == null || translation.detected_source_language.Equals(config_items.native_lang) || (string.IsNullOrEmpty(translation.detected_source_language) && string.IsNullOrEmpty(translation.text)))
             {
                 fromUser.retries++;
                 PrintDebug("Translation failure. Increasing {0} retry count to {1}.", fromUser.nickname, fromUser.retries + "");
                 if (fromUser.retries >= 3)
                 {
-                    fromUser.langcode = "EN";
+                    fromUser.langcode = config_items.native_lang;
                     PrintDebug("Set user {0} to English.", fromUser.nickname);
                 }
                 return "";
@@ -249,6 +250,7 @@ namespace adiIRC_DeepL_plugin_test
                 fromUser.retries = 0;
             window.OutputText(fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text);
 
+            // TEST PURPOSES ONLY
             return fromUser.nickname + "(" + translation.detected_source_language + "): " + translation.text; // FOR TEST ONLY
         }
     
@@ -257,10 +259,10 @@ namespace adiIRC_DeepL_plugin_test
         /// Translates any language into English
         /// </summary>
         /// <param name="argument">Message to translate</param>
-        public void deepl_en(RegisteredCommandArgs argument)
+        public async Task<string> deepl_en(RegisteredCommandArgs argument)
         {
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            deepl_translate_towindow("EN", allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
+            return await deepl_translate_towindow(config_items.native_lang, allarguments, argument.Window, new monitorItem("Yourself", "Yourself", NO_LANG));
         }
 
         /// <summary>
@@ -274,21 +276,26 @@ namespace adiIRC_DeepL_plugin_test
             string totranslate = allarguments.Substring(3);
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation == null) return ""; //translation failure
+            if (translation != null)
+            {  //translation failure
 
-            argument.Window.Editbox.Text = translation.text;
+                argument.Window.Editbox.Text = translation.text;
 
-            deepl_translation reverseTranslation = null;
-            if (reverseTranslate)
-            {
-                reverseTranslation = await deepl_translate("EN", translation.text, lang);
-                argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+                deepl_translation reverseTranslation = null;
+                if (reverseTranslate)
+                {
+                    reverseTranslation = await deepl_translate(config_items.native_lang, translation.text, lang);
+                    argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
+                }
+
+                // TEST PURPOSES ONLY
+                if (reverseTranslate && reverseTranslation != null)
+                    return translation.text + "|" + reverseTranslation.text;
+
+                // TEST PURPOSES ONLY
+                return translation.text;
             }
-
-            // return type changd for debug and unit test purposes
-            if (reverseTranslate && reverseTranslation != null)
-                return translation.text + "|" + reverseTranslation.text;
-            return translation.text;
+            return "";
         }
 
         /// <summary>
@@ -371,32 +378,13 @@ namespace adiIRC_DeepL_plugin_test
         }
 
         /// <summary>
-        /// Excludes certain languages from being auto translated
-        /// Useful if the rat speaks multiple languages
-        /// </summary>
-        /// <param name="argument">no args</param>
-        public void deepl_exclude(RegisteredCommandArgs argument)
-        {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            string langcode = allarguments.ToUpper();
-            if (!config_items.lang_no_translation.Contains(langcode))
-            {
-                config_items.lang_no_translation.Add(langcode);
-                save_config_items();
-            }
-        }
-
-        /// <summary>
         /// Sets certain parameters in configuration
-        /// keepNicks - Keep monitoring for nicks even if target disconnects
-        /// removeNicks - Stop monitoring for nicks when they disconnect
-        /// drillmode - toggles between listening for MechaSqueak or DrillSqueak
         /// </summary>
         /// <param name="argument">keepNicks/removeNicks/drillmode</param>
         public void deepl_set(RegisteredCommandArgs argument)
         {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            if (allarguments.Equals("autoRemoveNicks"))
+            string[] allarguments = argument.Command.Split(' ');
+            if (allarguments[1].Equals("autoRemoveNicks"))
             {
                 config_items.removePartingNicknames = !config_items.removePartingNicknames;
                 // print drillmode state after switch
@@ -406,7 +394,7 @@ namespace adiIRC_DeepL_plugin_test
                 save_config_items();
             }
 
-            if (allarguments.Equals("reverseTranslate"))
+            if (allarguments[1].Equals("reverseTranslate"))
             {
                 reverseTranslate = !reverseTranslate;
                 // print drillmode state after switch
@@ -416,7 +404,40 @@ namespace adiIRC_DeepL_plugin_test
                 save_config_items();
             }
 
-            if (allarguments.Equals("drillmode"))
+            if (allarguments[1].Equals("native"))
+            {
+                if (allarguments.Length > 2)
+                {
+                    string langcode = allarguments[2].ToUpper();
+                    config_items.native_lang = langcode;
+                    save_config_items();
+                }
+                else
+                    adihost.ActiveIWindow.OutputText("Error: 'native' setting requires language code argument");
+            }
+
+            if (allarguments[1].Equals("exclude"))
+            {
+                if (allarguments.Length > 2)
+                {
+                    string langcode = allarguments[2].ToUpper();
+                    if (!config_items.lang_no_translation.Contains(langcode))
+                    {
+                        config_items.lang_no_translation.Add(langcode);
+                        adihost.ActiveIWindow.OutputText(String.Format("Langcode '{0}' added to exclude list.", langcode));
+                    }
+                    else
+                    {
+                        config_items.lang_no_translation.Remove(langcode);
+                        adihost.ActiveIWindow.OutputText(String.Format("Langcode '{0}' removed from exclude list.", langcode));
+                    }
+                    save_config_items();
+                }
+                else
+                    adihost.ActiveIWindow.OutputText("Error: 'exclude' setting requires language code argument");
+            }
+
+            if (allarguments[1].Equals("drillmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 drillmode = !drillmode;
@@ -426,13 +447,13 @@ namespace adiIRC_DeepL_plugin_test
                 else adihost.ActiveIWindow.OutputText("DrillMode™ Disabled.");
             }
 
-            if (allarguments.Equals("debugmode"))
+            if (allarguments[1].Equals("debugmode"))
             {
                 // this config should only be in memory, not saved to deepl.conf
                 debugmode = !debugmode;
 
                 // print drillmode state after switch
-                if (drillmode) adihost.ActiveIWindow.OutputText("DebugMode™ Enabled!");
+                if (debugmode) adihost.ActiveIWindow.OutputText("DebugMode™ Enabled!");
                 else adihost.ActiveIWindow.OutputText("DebugMode™ Disabled.");
             }
         }
@@ -449,13 +470,28 @@ namespace adiIRC_DeepL_plugin_test
                 if (item != null) adihost.ActiveIWindow.OutputText(String.Format("#{0} - Nick: {1}, Lang: {2}", index, item.nickname, item.langcode));
                 index++;
             }
+
+            string monitoredChannels = "";
             foreach (string channelName in config_items.channel_monitor_items)
             {
-                adihost.ActiveIWindow.OutputText("Monitored Channel: " + channelName);
+                monitoredChannels += channelName + ", ";
             }
+            monitoredChannels = monitoredChannels.TrimEnd(' ', ',');
+
+            string excludedLangs = "";
+            foreach (string lang in config_items.lang_no_translation)
+            {
+                excludedLangs += lang + ", ";
+            }
+            excludedLangs = excludedLangs.TrimEnd(' ', ',');
+
+            adihost.ActiveIWindow.OutputText("Native Language: " + config_items.native_lang);
+            adihost.ActiveIWindow.OutputText("Monitored Channels: " + monitoredChannels);
+            adihost.ActiveIWindow.OutputText("Excluded Languages: " + excludedLangs);
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
             adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
+            adihost.ActiveIWindow.OutputText("Debugmode: " + debugmode);
         }
 
         public void deepl_help(RegisteredCommandArgs argument)
@@ -464,17 +500,18 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
-            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to english");
-            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list.");
-            adihost.ActiveIWindow.OutputText("/dl-mecha - Identifies fuelrat cases announced by MechaSqueak in the active channel and add them to the monitor list");
-            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring.");
-            adihost.ActiveIWindow.OutputText("/dl-exclude <langcode> - Adds a language code to the list of languages not to translate in auto-case mode.");
-            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin.");
-            adihost.ActiveIWindow.OutputText("     autoRemoveNicks  -> (config) toggles auto removal of non-case nicks when nick parts or quits");
-            adihost.ActiveIWindow.OutputText("     reverseTranslate -> (memory) toggles a reverse translation of /dl-any");
-            adihost.ActiveIWindow.OutputText("     drillmode        -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
-            adihost.ActiveIWindow.OutputText("     debugmode        -> (memory) toggles extra debug messages during operations");
-            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and/or other plugin debug information");
+            adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
+            adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
+            adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin");
+            adihost.ActiveIWindow.OutputText("  exclude <langcode>  -> (config) add/remove language on list that should not be auto-translated");
+            adihost.ActiveIWindow.OutputText("  native <langcode>   -> (config) change native langauge (default: EN)");
+            adihost.ActiveIWindow.OutputText("  autoRemoveNicks     -> (config) toggles auto removal of non-case nicks on parts or quits");
+            adihost.ActiveIWindow.OutputText("  reverseTranslate    -> (memory) toggles a reverse translation of /dl-any");
+            adihost.ActiveIWindow.OutputText("  drillmode           -> (memory) toggles whether to observe MechaSqueak or DrillSqueak");
+            adihost.ActiveIWindow.OutputText("  debugmode           -> (memory) toggles extra debug messages during operations");
+            adihost.ActiveIWindow.OutputText("/dl-debug - Lists items monitored and other plugin debug information");
             adihost.ActiveIWindow.OutputText("/dl-help - Shows this command reference");
         }
 
@@ -530,11 +567,22 @@ namespace adiIRC_DeepL_plugin_test
                                 if (match.Groups["nickname"].Success)
                                 {
                                     string nick = match.Groups["nickname"].Value;
+
+                                    // check if repeat client
+                                    int index;
+                                    if (IsNickMonitored(nick, out index))
+                                        monitor_items[index] = null;
+
                                     monitor_items[caseNum] = new monitorItem(nick, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + nick);
                                 }
                                 else
                                 {
+                                    // check if repeat client
+                                    int index;
+                                    if (IsNickMonitored(cmdr, out index))
+                                        monitor_items[index] = null;
+
                                     monitor_items[caseNum] = new monitorItem(cmdr, cmdr, langcode: langcode);
                                     PrintDebug("Monitoring " + cmdr);
                                 }
@@ -552,10 +600,10 @@ namespace adiIRC_DeepL_plugin_test
                 {
                     // check if case lang is EN or on the exclude list
                     string langcode = monitor_items[index].langcode;
-                    if (!langcode.Equals("EN") && !config_items.lang_no_translation.Contains(langcode))
+                    if (!langcode.Equals(config_items.native_lang) && !config_items.lang_no_translation.Contains(langcode))
                     {
                         PrintDebug("Translating {0}'s message - {1}", message.User.Nick, message.Message);
-                        return deepl_translate_towindow("EN", message.Message, channel, monitor_items[index]).Result;
+                        return deepl_translate_towindow(config_items.native_lang, message.Message, channel, monitor_items[index]).Result;
                     }
                 }
             }

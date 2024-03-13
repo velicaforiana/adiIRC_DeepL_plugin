@@ -42,9 +42,10 @@ namespace adiIRC_DeepL_plugin_test
 
             bool testResult = false;
             bool testAPI = true; // flip this switch to test API calls, keep off to save API usage
+            testPlugin.deepl_set(new RegisteredCommandArgs("_ native EN", fuelratsChan));
 
             // Test enabling debugmode
-            testPlugin.deepl_set(new RegisteredCommandArgs("debugmode", fuelratsChan));
+            testPlugin.deepl_set(new RegisteredCommandArgs("_ debugmode", fuelratsChan));
             if (adiIRC_DeepL_plugin.debugmode) testResult = true;
             else testResult = false;
             PrintTestResult("Enable Debug Mode", testResult);
@@ -209,11 +210,26 @@ namespace adiIRC_DeepL_plugin_test
             if (testAPI)
             {
                 Console.WriteLine("\n==== Reverse Translation ====");
-                if (!adiIRC_DeepL_plugin.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("reverseTranslate", fuelratsChan));
+                if (!adiIRC_DeepL_plugin.reverseTranslate) testPlugin.deepl_set(new RegisteredCommandArgs("_ reverseTranslate", fuelratsChan));
                 string translation = await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
                 if (translation.Equals("Il s'agit d'un test.|This is a test.")) testResult = true;
                 else testResult = false;
                 PrintTestResult("Reverse Translation", testResult);
+
+                testPlugin.deepl_set(new RegisteredCommandArgs("_ reverseTranslate", fuelratsChan)); //turn off again
+            }
+
+
+            // Test Native Lang Change
+            if (testAPI)
+            {
+                Console.WriteLine("\n==== Native Language Change ====");
+                testPlugin.deepl_set(new RegisteredCommandArgs("_ native DE", fuelratsChan));
+                string translation = await testPlugin.deepl_en(new RegisteredCommandArgs("_ This is a test.", fuelratsChan));
+                if (translation.Equals("Yourself(EN): Dies ist ein Test.")) testResult = true;
+                else testResult = false;
+                PrintTestResult("Native Language Change", testResult);
+
             }
 
 

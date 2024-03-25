@@ -183,22 +183,40 @@
                     string responseContent = await response.Content.ReadAsStringAsync();
 
                     deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
-                    if (response.IsSuccessStatusCode)
+                    try
                     {
-
-                        // If the sourceLang was incorrect, toTranslate and the translation will be the same, re-run the translation with no langcode
-                        if (jsonResponse.translations[0].text.Equals(totranslate))
+                        jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
+                        if (response.IsSuccessStatusCode)
                         {
-                            // If this is the second attempt, or retrying is otherwise disabled, stop trying
-                            if (!shouldRetry) return null;
-                            return await deepl_translate(lang, totranslate, shouldRetry: false);
+                            // If the sourceLang was incorrect, toTranslate and the translation will be the same, re-run the translation with no langcode
+                            if (jsonResponse.translations[0].text.Equals(totranslate))
+                            {
+                                // If this is the second attempt, or retrying is otherwise disabled, stop trying
+                                if (!shouldRetry) return null;
+                                return await deepl_translate(lang, totranslate, shouldRetry: false);
+                            }
+                            return jsonResponse.translations[0];
                         }
-                        return jsonResponse.translations[0];
+                        else
+                        {
+                            // Normal Adi errors such as 'bad lang code' will be communicated through the 'message' json parameter
+                            if (!string.IsNullOrEmpty(jsonResponse.message))
+                                adihost.ActiveIWindow.OutputText(jsonResponse.message);
+                            return null;
+                        }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        adihost.ActiveIWindow.OutputText(jsonResponse.message);
-                        if (jsonResponse.message.Contains("not supported")) return null;
+                        adihost.ActiveIWindow.OutputText("Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
+                        try
+                        {
+                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + responseContent);
+                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + e.Message);
+                        }
+                        catch (Exception f)
+                        {
+                            adihost.ActiveIWindow.OutputText(f.ToString());
+                        }
                     }
                 }
             }

@@ -211,14 +211,16 @@ namespace adiIRC_DeepL_plugin_test
                     }
                     catch (Exception e)
                     {
-                        adihost.ActiveIWindow.OutputText("Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
+                        adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
                         try
                         {
+                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + String.Format(" - Translation text: {0} | Source Lang: {1} | Target Lang: {2}", totranslate, sourceLang, lang));
                             System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + responseContent);
                             System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + e.Message);
                         }
                         catch (Exception f)
                         {
+                            adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to write to debug log.");
                             adihost.ActiveIWindow.OutputText(f.ToString());
                         }
                     }
@@ -226,6 +228,7 @@ namespace adiIRC_DeepL_plugin_test
             }
             catch (Exception e)
             {
+                adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to send translation request. General error.");
                 adihost.ActiveIWindow.OutputText(e.ToString());
             }
             return new deepl_translation();

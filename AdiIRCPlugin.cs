@@ -80,7 +80,7 @@
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
         private static bool drillmode = false, debugmode = false, reverseTranslate = false;
-        private const string NO_LANG = "ZZ";
+        private const string NO_LANG = "ZZ"; // AKA: Translate as an unknown language
         private ITools tools;
 
 
@@ -313,8 +313,11 @@
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: NO_LANG);
 
-            if (!IsNickMonitored(allarguments))
+            int index;
+            if (!IsNickMonitored(allarguments, out index))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
+            else
+                monitor_items[index].langcode = NO_LANG;
         }
 
 

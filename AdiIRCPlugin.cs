@@ -81,6 +81,7 @@
         private List<monitorItem> monitor_items;
         private static bool drillmode = false, debugmode = false, reverseTranslate = false;
         private const string NO_LANG = "ZZ";
+        private ITools tools;
 
 
         /// <summary>
@@ -89,7 +90,7 @@
         /// <param name="message">Message to print</param>
         private void PrintDebug(string message)
         {
-            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + message);
+            if (debugmode) tools.Debug("DeepL Plugin DEBUG: " + message);
         }
 
         /// <summary>
@@ -100,7 +101,7 @@
         /// <param name="formatArgs">Strings to insert into formattable message</param>
         private void PrintDebug(string message, params string[] formatArgs)
         {
-            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + string.Format(message, formatArgs));
+            if (debugmode) tools.Debug("DeepL Plugin DEBUG: " + string.Format(message, formatArgs));
         }
 
         /// <summary>
@@ -224,8 +225,8 @@
             }
             catch (Exception e)
             {
-                adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to send translation request. General error.");
-                adihost.ActiveIWindow.OutputText(e.ToString());
+                adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to send translation request. General error. See /rawlog");
+                tools.Debug(e.ToString());
             }
             return new deepl_translation();
         }
@@ -704,6 +705,7 @@
 
         public void Initialize(IPluginHost pluginHost)
         {
+            tools = pluginHost.Tools;
             adihost = pluginHost;
             string configdir = pluginHost.ConfigFolder;
             deepl_config_file = configdir + "deepl.conf";

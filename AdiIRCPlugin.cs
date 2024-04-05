@@ -80,7 +80,8 @@
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
         private static bool drillmode = false, debugmode = false, reverseTranslate = false;
-        private const string NO_LANG = "ZZ";
+        private const string NO_LANG = "ZZ"; // AKA: Translate as an unknown language
+        private ITools tools;
 
 
         /// <summary>
@@ -89,7 +90,7 @@
         /// <param name="message">Message to print</param>
         private void PrintDebug(string message)
         {
-            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + message);
+            if (debugmode) tools.Debug("DeepL Plugin DEBUG: " + message);
         }
 
         /// <summary>
@@ -100,7 +101,7 @@
         /// <param name="formatArgs">Strings to insert into formattable message</param>
         private void PrintDebug(string message, params string[] formatArgs)
         {
-            if (debugmode) adihost.ActiveIWindow.OutputText("DEBUG: " + string.Format(message, formatArgs));
+            if (debugmode) tools.Debug("DeepL Plugin DEBUG: " + string.Format(message, formatArgs));
         }
 
         /// <summary>
@@ -207,14 +208,16 @@
                     }
                     catch (Exception e)
                     {
-                        adihost.ActiveIWindow.OutputText("Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
+                        adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
                         try
                         {
+                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + String.Format(" - Translation text: {0} | Source Lang: {1} | Target Lang: {2}", totranslate, sourceLang, lang));
                             System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + responseContent);
                             System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + e.Message);
                         }
                         catch (Exception f)
                         {
+                            adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to write to debug log.");
                             adihost.ActiveIWindow.OutputText(f.ToString());
                         }
                     }
@@ -222,7 +225,8 @@
             }
             catch (Exception e)
             {
-                adihost.ActiveIWindow.OutputText(e.ToString());
+                adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to send translation request. General error. See /rawlog");
+                tools.Debug(e.ToString());
             }
             return new deepl_translation();
         }
@@ -309,8 +313,11 @@
             string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
             monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: NO_LANG);
 
-            if (!IsNickMonitored(allarguments))
+            int index;
+            if (!IsNickMonitored(allarguments, out index))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
+            else
+                monitor_items[index].langcode = NO_LANG;
         }
 
 
@@ -701,6 +708,7 @@
 
         public void Initialize(IPluginHost pluginHost)
         {
+            tools = pluginHost.Tools;
             adihost = pluginHost;
             string configdir = pluginHost.ConfigFolder;
             deepl_config_file = configdir + "deepl.conf";

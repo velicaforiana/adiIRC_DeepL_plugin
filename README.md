@@ -1,9 +1,6 @@
 # AdiIRC Deepl Plugin
 
-This plugin allows to mark nicknames for automatic translation to english using the DeepL API.
-A DeepL API Key is required and can be set using the /dl-api command.
-/dl-help will list all supported commands.
-The most important one would be /dl-mon <nick> to mark that nickname for translation.
+This plugin will monitor IRC nicknames for automatic translation to the user's native language using the DeepL API.
 
 In addition to the general translation feature there are some [Fuel Rats](https://fuelrats.com) integrations as well.
 Incoming cases and their language can be automatically identified and marked for tranlation if needed.
@@ -32,7 +29,8 @@ Incoming cases and their language can be automatically identified and marked for
  5. Click to Files -> Plugins.
     - If the plugin is not listed: Click "Install New". Select the "adiIRC_DeepL.dll" from the Plugins directory.
     - If the plugin is listed: Select "adiIRC_DeepL.dll" and click "Load"
- 6. Type "/dl-help" in an AdiIRC editbox to see if the help page prints.
+ 6. Type "/dl-api <API_Key>" in an AdiIRC editbox. (example: /dl-api 23f8******1:fx )
+ 7. Type "/dl-help"  to see if the help page prints.
    
 # Usage
 
@@ -65,7 +63,7 @@ This plugin uses the DeepL API to perform its translations. Users must sign up f
 ```
 /dl-en <message>
 Args:
- - message: Non-english message that will be (hopefully) translated into English.
+ - message: Non-english message that will be (hopefully) translated into the user's native language.
 Example usage:
 /dl-en Il s'agit d'un test.
 ```
@@ -158,7 +156,7 @@ Use this command to toggle various options. Options labeled as "(config)" will b
 - autoRemoveNicks (config): When a monitored client leaves IRC, this will automatically remove them from monitoring. This does not apply to Fuel Rat case clients, monitored by /dl-mecha.
 - reverseTranslate (memory): When using /dl-any, this will additionally take the resulting translation, and feed it back to DeepL to translate the message back into English. The reverse translated English message will be printed to the Output Window. This can be useful when trying to communicate nuanced information, and helps the user check if their message was translated properly. Warning: This will increase translation character usage of the Free DeepL Account API.
 - drillmode (memory): Fuel Rat Usage. Changes the plugin to monitor DrillSqueak instead of MechaSqueak. Used primarily for testing the plugin.
-- debugmode (memory): Enables various debug missions to be printed to the Output Window.
+- debugmode (memory): Enables various debug missions to be printed to the /rawlog
 
 --  
 **/dl-debug**

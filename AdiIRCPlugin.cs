@@ -171,7 +171,7 @@
             {
                 HttpClientHandler handler = new HttpClientHandler();
                 HttpClient httpClient = new HttpClient(handler);
-                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.deepl.com/v2/translate"))
+                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://" + config_items.api_endpoint + "/v2/translate"))
                 {
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);

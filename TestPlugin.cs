@@ -52,7 +52,7 @@ namespace adiIRC_DeepL_plugin_test
     }
     public class deepl_config_items
     {
-        public string apikey, native_lang;    // Api Key sent with all deepl calls
+        public string apikey, native_lang, api_endpoint;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
@@ -64,6 +64,7 @@ namespace adiIRC_DeepL_plugin_test
             native_lang = "EN";
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
+            api_endpoint = "api-free.deepl.com";
         }
     }
 
@@ -172,7 +173,7 @@ namespace adiIRC_DeepL_plugin_test
             {
                 HttpClientHandler handler = new HttpClientHandler();
                 HttpClient httpClient = new HttpClient(handler);
-                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api-free.deepl.com/v2/translate"))
+                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://" + config_items.api_endpoint + "/v2/translate"))
                 {
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);
@@ -184,6 +185,16 @@ namespace adiIRC_DeepL_plugin_test
 
                     HttpResponseMessage response = await httpClient.SendAsync(requestMessage);
                     string responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (responseContent.Contains("Wrong endpoint. Use https://api.deepl.com"))
+                    {
+                        config_items.api_endpoint = "api.deepl.com";
+                        save_config_items();
+                        if (shouldRetry)
+                            return await deepl_translate(lang, totranslate, sourceLang, false);
+                        else
+                            return null;
+                    }
 
 
                     deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);

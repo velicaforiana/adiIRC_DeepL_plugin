@@ -297,14 +297,29 @@
         /// <param name="argument">language code, and message to translate</param>
         private async void deepl_any(RegisteredCommandArgs argument)
         {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            string lang = allarguments.Substring(0, 2).ToUpper();
-            string totranslate = allarguments.Substring(3);
+            string[] allArgs = argument.Command.Split(new char[] { ' ' }, 3);
+            string lang, cmdr = "";
+
+            // if first arg is a number, find the case, use lang and cmdr from the case
+            int index;
+            if (int.TryParse(allArgs[1], out index) && monitor_items[index] != null)
+            {
+                lang = monitor_items[index].langcode;
+                cmdr = monitor_items[index].cmdr;
+            }
+            else
+                lang = allArgs[1];
+
+            string totranslate = allArgs[2];
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation != null) // check for translation failure
-            {  
-                argument.Window.Editbox.Text = translation.text;
+            if (translation != null)
+            {  //translation failure
+
+                string translationText = translation.text;
+                if (!string.IsNullOrEmpty(cmdr))
+                    translationText = cmdr + ", " + translationText;
+                argument.Window.Editbox.Text = translationText;
 
                 deepl_translation reverseTranslation = null;
                 if (reverseTranslate)
@@ -521,9 +536,9 @@
             adihost.ActiveIWindow.OutputText("AdiIRC Deepl Plugin Command Reference");
             adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
-            adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
+            adihost.ActiveIWindow.OutputText("/dl-any <langcode|caseNumber> <text> - Translates text to target language and places translation into active editbox");
             adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
-            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname|caseNumber> - Removes a single nickname or case number from the monitor list");
             adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
             adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
             adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin");

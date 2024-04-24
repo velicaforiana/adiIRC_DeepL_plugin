@@ -52,7 +52,7 @@ namespace adiIRC_DeepL_plugin_test
     }
     public class deepl_config_items
     {
-        public string apikey, native_lang;    // Api Key sent with all deepl calls
+        public string apikey, native_lang, api_endpoint;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
         public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
@@ -64,6 +64,7 @@ namespace adiIRC_DeepL_plugin_test
             native_lang = "EN";
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
+            api_endpoint = "api-free.deepl.com";
         }
     }
 
@@ -172,7 +173,7 @@ namespace adiIRC_DeepL_plugin_test
             {
                 HttpClientHandler handler = new HttpClientHandler();
                 HttpClient httpClient = new HttpClient(handler);
-                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api-free.deepl.com/v2/translate"))
+                using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://" + config_items.api_endpoint + "/v2/translate"))
                 {
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("text", totranslate);
@@ -184,6 +185,16 @@ namespace adiIRC_DeepL_plugin_test
 
                     HttpResponseMessage response = await httpClient.SendAsync(requestMessage);
                     string responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (responseContent.Contains("Wrong endpoint. Use https://api.deepl.com"))
+                    {
+                        config_items.api_endpoint = "api.deepl.com";
+                        save_config_items();
+                        if (shouldRetry)
+                            return await deepl_translate(lang, totranslate, sourceLang, false);
+                        else
+                            return null;
+                    }
 
 
                     deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
@@ -293,15 +304,29 @@ namespace adiIRC_DeepL_plugin_test
         /// <param name="argument">language code, and message to translate</param>
         public async Task<string> deepl_any(RegisteredCommandArgs argument) // for testing, return Task<string> so we can await the completion of this function and validate output
         {
-            string allarguments = argument.Command.Substring(argument.Command.IndexOf(" ") + 1);
-            string lang = allarguments.Substring(0, 2).ToUpper();
-            string totranslate = allarguments.Substring(3);
+            string[] allArgs = argument.Command.Split(new char[] {' '}, 3);
+            string lang, cmdr = "";
+
+            // if first arg is a number, find the case, use lang and cmdr from the case
+            int index;
+            if (int.TryParse(allArgs[1], out index) && monitor_items[index] != null)
+            {
+                lang = monitor_items[index].langcode;
+                cmdr = monitor_items[index].cmdr;
+            }
+            else
+                lang = allArgs[1];
+
+            string totranslate = allArgs[2];
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
             if (translation != null)
             {  //translation failure
 
-                argument.Window.Editbox.Text = translation.text;
+                string translationText = translation.text;
+                if (!string.IsNullOrEmpty(cmdr))
+                    translationText = cmdr + ", " + translationText;
+                argument.Window.Editbox.Text = translationText;
 
                 deepl_translation reverseTranslation = null;
                 if (reverseTranslate)
@@ -315,7 +340,7 @@ namespace adiIRC_DeepL_plugin_test
                     return translation.text + "|" + reverseTranslation.text;
 
                 // TEST PURPOSES ONLY
-                return translation.text;
+                return translationText;
             }
             return "";
         }
@@ -521,9 +546,9 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("AdiIRC Deepl Plugin Command Reference");
             adihost.ActiveIWindow.OutputText("/dl-api <api-key> - Sets your DeepL Api key. https://www.deepl.com/en/signup/?cta=checkout");
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
-            adihost.ActiveIWindow.OutputText("/dl-any <langcode> <text> - Translates text to target language and places translation into active editbox");
+            adihost.ActiveIWindow.OutputText("/dl-any <langcode|caseNumber> <text> - Translates text to target language and places translation into active editbox");
             adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
-            adihost.ActiveIWindow.OutputText("/dl-rm <nickname>|<caseNumber> - Removes a single nickname or case number from the monitor list");
+            adihost.ActiveIWindow.OutputText("/dl-rm <nickname|caseNumber> - Removes a single nickname or case number from the monitor list");
             adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
             adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
             adihost.ActiveIWindow.OutputText("/dl-set <option> - Configures certain behavious of the plugin");

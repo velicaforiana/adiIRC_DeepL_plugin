@@ -199,8 +199,11 @@ namespace adiIRC_DeepL_plugin_test
             {
                 Console.WriteLine("\n==== Good and Bad Lang Code ====");
                 string success = await testPlugin.deepl_any(new RegisteredCommandArgs("_ FR This is a test.", fuelratsChan));
+
+                testPlugin.monitor_items[5].langcode = "FR";
+                string caseNum = await testPlugin.deepl_any(new RegisteredCommandArgs("_ 5 This is a test.", fuelratsChan));
                 string failure = await testPlugin.deepl_any(new RegisteredCommandArgs("_ XY This is a test.", fuelratsChan));
-                if (success.Equals("Il s'agit d'un test.") && String.IsNullOrEmpty(failure)) testResult = true;
+                if (success.Equals("Il s'agit d'un test.") && caseNum.Equals("Delryn, Il s'agit d'un test.") && String.IsNullOrEmpty(failure)) testResult = true;
                 else testResult = false;
                 PrintTestResult("Good/Bad Lang Code", testResult);
             }

@@ -73,15 +73,19 @@ This will translate a message from any DeepL supported language to user's native
 --  
 **/dl-any**
 ```
-/dl-any <langcode> <message>
+/dl-any <langcode|caseNumber> <message>
 Args:
  - langcode: Two letter language code for target translation
+ - caseNumber: Integer that represents a FuelRats case
  - message: Message to translate into target language
 Example usage:
 /dl-any FR This is a test
+/dl-any 3 This is a test
 ```
 
 Translates any language into a target language. Usually this will be your native language into a non-native language. "/dl-set reverseTranslate" can be used to enable this function to translate the resulting message back into user's native language for inspection purposes.
+
+When using a case number, the plugin will find the client's language code, and also prepend the client's name to the resulting message.
 
 --  
 **/dl-mon**

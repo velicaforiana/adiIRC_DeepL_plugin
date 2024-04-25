@@ -100,6 +100,21 @@ Example usage:
 Enables monitoring of a specific user, and will automatically translate any message that the user sends. If the translation is detected as English three times in a row, monitoring will be disabled to conserve API usage.
 
 --  
+**/dl-lang**
+```
+/dl-lang <nickname|caseNumber> <langcode>
+Args:
+ - nickname: User nick to change langcode for
+ - caseNumber: Case number to change langcode for
+ - langcode: New 2-letter langcode for monitoring (ISO 639 [set 1])
+Example usage:
+/dl-lang Delryn RU
+/dl-lang 3 de
+```
+
+Changes what language you expect to see from a target nick or case. This is most useful for FuelRats dispatchers, but will make general translating more accurate if the assumed language matches the target's actual language.
+
+--  
 **/dl-rm**
 ```
 /dl-rm <nickname>|<caseNumber>

@@ -72,7 +72,7 @@
 
         public string PluginAuthor { get { return "Velica Foriana"; } }
 
-        public string PluginVersion { get { return "1.0"; } }
+        public string PluginVersion { get { return "1.3"; } }
 
         public string PluginEmail { get { return "velicaforiana@******"; } }
 

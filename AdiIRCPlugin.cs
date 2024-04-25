@@ -340,10 +340,40 @@
             monitorItem monitorCandidate = new monitorItem(allarguments, allarguments, langcode: NO_LANG);
 
             int index;
-            if (!IsNickMonitored(allarguments, out index))
+            if (!IsMonitored(allarguments, out index))
                 monitor_items.Add(monitorCandidate); //add new entry into 20+ zone (ideally non-cases)
             else
                 monitor_items[index].langcode = NO_LANG;
+        }
+
+        /// <summary>
+        /// Updates lang code monitoring for a nick or case
+        /// </summary>
+        /// <param name="nick|caseNum">Nick or Case Number to update</param>
+        /// <param name="newLang">New language code</param>
+        public void deepl_lang(RegisteredCommandArgs argument)
+        {
+            string[] allArgs = argument.Command.Split(new char[] { ' ' }, 3);
+            if (allArgs.Length >= 3)
+            {
+                string target = allArgs[1];
+                string newLang = allArgs[2];
+                if (newLang.Length == 2)
+                {
+                    int index;
+                    if (IsMonitored(target, out index))
+                    {
+                        monitor_items[index].langcode = newLang;
+                    }
+                    else
+                        adihost.ActiveIWindow.OutputText("Warning: Could not find '" + target + "' in monitor list.");
+                }
+                else
+                    adihost.ActiveIWindow.OutputText("Warning: New language should be a 2-letter language code. Example: /dl-lang NickName RU");
+            }
+            else
+                adihost.ActiveIWindow.OutputText("Warning: Not enough arguments supplied. Usage: /dl-lang <nick|caseNumber> <langCode>");
+
         }
 
 
@@ -366,7 +396,7 @@
                 else
                     adihost.ActiveIWindow.OutputText("Could not find case #" + allarguments + " in monitor list.");
             }
-            else if (IsNickMonitored(allarguments, out index)) 
+            else if (IsMonitored(allarguments, out index)) 
             {
                 //remove a case
                 if (index < 20) //0-19 index range reserved for cases, just null out
@@ -538,6 +568,7 @@
             adihost.ActiveIWindow.OutputText("/dl-en <text> - Translates text to english");
             adihost.ActiveIWindow.OutputText("/dl-any <langcode|caseNumber> <text> - Translates text to target language and places translation into active editbox");
             adihost.ActiveIWindow.OutputText("/dl-mon <nickname> - Translates every message made by <nickname> to your native language");
+            adihost.ActiveIWindow.OutputText("/dl-lang <nickname|caseNumber> <langcode> - Changes the assumed language of a user or client");
             adihost.ActiveIWindow.OutputText("/dl-rm <nickname|caseNumber> - Removes a single nickname or case number from the monitor list");
             adihost.ActiveIWindow.OutputText("/dl-mecha - Starts monitoring for Fuel Rats cases announced by MechaSqueak in the active channel");
             adihost.ActiveIWindow.OutputText("/dl-clear - Clears the list of nicks to monitor for translations. Also disables case monitoring");
@@ -607,7 +638,7 @@
 
                                     // check if repeat client
                                     int index;
-                                    if (IsNickMonitored(nick, out index))
+                                    if (IsMonitored(nick, out index))
                                         monitor_items[index] = null;
 
                                     monitor_items[caseNum] = new monitorItem(nick, cmdr, langcode: langcode);
@@ -617,7 +648,7 @@
                                 {
                                     // check if repeat client
                                     int index;
-                                    if (IsNickMonitored(cmdr, out index))
+                                    if (IsMonitored(cmdr, out index))
                                         monitor_items[index] = null;
 
                                     monitor_items[caseNum] = new monitorItem(cmdr, cmdr, langcode: langcode);
@@ -633,7 +664,7 @@
             {
                 // else check if message is from a monitored user
                 int index;
-                if (IsNickMonitored(message.User.Nick, out index))
+                if (IsMonitored(message.User.Nick, out index))
                 {
                     // check if case lang is EN or on the exclude list
                     string langcode = monitor_items[index].langcode;
@@ -647,21 +678,33 @@
         }
 
         /// <summary>
-        /// Checks to see if a given nick is being monitored
+        /// Checks to see if a given nick or case number is being monitored
         /// 
         /// Return: Bool true if monitored, false if not
         /// Out int: If true, index will be where in the list the target is
         /// </summary>
-        /// <param name="nickToFind">Which nick to search for</param>
+        /// <param name="toFind">Which nick or case number to search for</param>
         /// <param name="index">Out: index of located nick</param>
         /// <returns></returns>
-        private bool IsNickMonitored(string nickToFind, out int index)
+        private bool IsMonitored(string toFind, out int index)
         {
+            if (int.TryParse(toFind, out index))
+            {
+                if (index < monitor_items.Count && monitor_items[index] != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             index = 0;
             foreach (monitorItem item in monitor_items)
             {
                 if (item != null)
-                    if (nickToFind.Equals(item.nickname) || nickToFind.Equals(item.cmdr))
+                    if (toFind.Equals(item.nickname) || toFind.Equals(item.cmdr))
                     {
                         return true;
                     }
@@ -678,12 +721,25 @@
         /// </summary>
         /// <param name="nickToFind"></param>
         /// <returns></returns>
-        private bool IsNickMonitored(string nickToFind)
+        private bool IsMonitored(string toFind)
         {
+            int index;
+            if (int.TryParse(toFind, out index))
+            {
+                if (monitor_items.Count < index && monitor_items[index] != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             foreach (monitorItem item in monitor_items)
             {
                 if (item != null)
-                    if (nickToFind.Equals(item.nickname) || nickToFind.Equals(item.cmdr))
+                    if (toFind.Equals(item.nickname) || toFind.Equals(item.cmdr))
                     {
                         return true;
                     }
@@ -698,7 +754,7 @@
         private void OnNick(NickArgs nickArgs)
         {
             int index;
-            if (IsNickMonitored(nickArgs.User.Nick, out index))
+            if (IsMonitored(nickArgs.User.Nick, out index))
                 monitor_items[index].nickname = nickArgs.NewNick;
         }
 
@@ -713,7 +769,7 @@
             if (config_items.removePartingNicknames)
             {
                 int index;
-                if (IsNickMonitored(quitArgs.User.Nick, out index))
+                if (IsMonitored(quitArgs.User.Nick, out index))
                     if (index > 19)
                         monitor_items.RemoveAt(index);
             }
@@ -730,7 +786,7 @@
             if (config_items.removePartingNicknames)
             {
                 int index;
-                if (IsNickMonitored(partArgs.User.Nick, out index))
+                if (IsMonitored(partArgs.User.Nick, out index))
                     if (index > 19)
                         monitor_items.RemoveAt(index);
             }
@@ -758,6 +814,7 @@
             adihost.HookCommand("/dl-en", deepl_en);
             adihost.HookCommand("/dl-any", deepl_any);
             adihost.HookCommand("/dl-mon", deepl_mon);
+            adihost.HookCommand("/dl-lang", deepl_lang);
             adihost.HookCommand("/dl-rm", deepl_rm);
             adihost.HookCommand("/dl-mecha", deepl_auto_case);
             adihost.HookCommand("/dl-clear", deepl_clearmon);

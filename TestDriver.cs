@@ -50,11 +50,6 @@ namespace adiIRC_DeepL_plugin_test
             else testResult = false;
             PrintTestResult("Enable Debug Mode", testResult);
 
-            // Test deepl-any call
-            // TODO: error handle API functions, and make unit tests
-            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ EN This is a test.", fuelratsChan));
-            //await testPlugin.deepl_any(new RegisteredCommandArgs("_ ZZ This is a test.", fuelratsChan));
-
             // Test basic EN ratsignal
             Console.WriteLine("\n==== Autodetect EN Case ====");
             string rsig = "RATSIGNAL Case #3 PC HOR – CMDR Velica Foriana – System: \"TASCHETER SECTOR QN - T A3 - 1\" (Brown dwarf 79.9 LY from Sol) – Language: English (United Kingdom) (en-US) – Nick: Velica_Foriana (ODY_SIGNAL)";
@@ -132,8 +127,8 @@ namespace adiIRC_DeepL_plugin_test
                 else testResult = false;
                 PrintTestResult("Garbage Translation", testResult);
 
-
-                testPlugin.monitor_items[5].langcode = "XY";
+                // Test dl-lang to update language to a bogus langcode
+                testPlugin.deepl_lang(new RegisteredCommandArgs("_ 5 XY", fuelratsChan));
                 userMessage.Message = "Dies ist ein Test.";
                 translation = testPlugin.OnChannelNormalMessage(userMessage);
                 System.Threading.Thread.Sleep(1000);

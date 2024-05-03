@@ -117,7 +117,7 @@ Changes what language you expect to see from a target nick or case. This is most
 --  
 **/dl-rm**
 ```
-/dl-rm <nickname>|<caseNumber>
+/dl-rm <nickname|caseNumber>
 Args:
  - nickname: User nick to stop monitoring
  - caseNumber: (For Fuel Rats) case number to stop monitoring

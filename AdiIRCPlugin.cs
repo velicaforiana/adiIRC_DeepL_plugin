@@ -305,7 +305,7 @@
             if (int.TryParse(allArgs[1], out index) && monitor_items[index] != null)
             {
                 lang = monitor_items[index].langcode;
-                cmdr = monitor_items[index].cmdr;
+                cmdr = monitor_items[index].nickname;
             }
             else
                 lang = allArgs[1];

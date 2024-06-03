@@ -312,7 +312,7 @@ namespace adiIRC_DeepL_plugin_test
             if (IsMonitored(allArgs[1], out index))
             {
                 lang = monitor_items[index].langcode;
-                cmdr = monitor_items[index].cmdr;
+                cmdr = monitor_items[index].nickname;
             }
             else
                 lang = allArgs[1];
@@ -320,14 +320,15 @@ namespace adiIRC_DeepL_plugin_test
             string totranslate = allArgs[2];
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation != null)
-            {  //translation failure
+            if (translation != null) //if not translation failure
+            {  
 
                 string translationText = translation.text;
                 if (!string.IsNullOrEmpty(cmdr))
                     translationText = cmdr + ", " + translationText;
                 argument.Window.Editbox.Text = translationText;
 
+                //do a reverse translation back into user's native language
                 deepl_translation reverseTranslation = null;
                 if (reverseTranslate)
                 {

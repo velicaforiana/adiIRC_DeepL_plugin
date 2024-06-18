@@ -377,6 +377,7 @@ namespace adiIRC_DeepL_plugin_test
                     if (IsMonitored(target, out index))
                     {
                         monitor_items[index].langcode = newLang;
+                        monitor_items[index].initLang = newLang;
                     }
                     else
                         adihost.ActiveIWindow.OutputText("Warning: Could not find '" + target + "' in monitor list.");

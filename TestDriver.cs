@@ -25,7 +25,7 @@ namespace adiIRC_DeepL_plugin_test
             fuelratsChan.Name = "#fuelrats";
             List<IChannel> fuelratsChannelList = new List<IChannel>();
             fuelratsChannelList.Add(fuelratsChan);
-
+            
             // Set up server
             IServer fuelratsServer = new IServer(fuelratsChannelList);
             List<IServer> fuelratsServerList = new List<IServer>();

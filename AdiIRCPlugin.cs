@@ -34,7 +34,7 @@
 
     public class monitorItem
     {
-        public string nickname, cmdr, platform, langcode;  // The nickname to monitor
+        public string nickname, cmdr, platform, langcode, initLang;  // The nickname to monitor
         public int retries = 0;
 
         public monitorItem(string nickname, string cmdr, string langcode = "ZZ", string platform = "")
@@ -43,6 +43,7 @@
             this.nickname = nickname;
             this.cmdr = cmdr;
             this.langcode = langcode;
+            this.initLang = langcode;
             this.platform = platform; //for future use, maybe
         }
     }
@@ -304,8 +305,8 @@
             int index;
             if (int.TryParse(allArgs[1], out index) && monitor_items[index] != null)
             {
-                lang = monitor_items[index].langcode;
-                cmdr = monitor_items[index].cmdr;
+                lang = monitor_items[index].initLang;
+                cmdr = monitor_items[index].nickname;
             }
             else
                 lang = allArgs[1];
@@ -364,6 +365,7 @@
                     if (IsMonitored(target, out index))
                     {
                         monitor_items[index].langcode = newLang;
+                        monitor_items[index].initLang = newLang;
                     }
                     else
                         adihost.ActiveIWindow.OutputText("Warning: Could not find '" + target + "' in monitor list.");

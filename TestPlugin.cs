@@ -38,7 +38,7 @@ namespace adiIRC_DeepL_plugin_test
 
     public class monitorItem
     {
-        public string nickname, cmdr, platform, langcode;  // The nickname to monitor
+        public string nickname, cmdr, platform, langcode, initLang;  // The nickname to monitor
         public int retries = 0;
 
         public monitorItem(string nickname, string cmdr, string langcode = "ZZ", string platform = "")
@@ -47,6 +47,7 @@ namespace adiIRC_DeepL_plugin_test
             this.nickname = nickname;
             this.cmdr = cmdr;
             this.langcode = langcode;
+            this.initLang = langcode;
             this.platform = platform; //for future use, maybe
         }
     }
@@ -311,8 +312,8 @@ namespace adiIRC_DeepL_plugin_test
             int index;
             if (IsMonitored(allArgs[1], out index))
             {
-                lang = monitor_items[index].langcode;
-                cmdr = monitor_items[index].cmdr;
+                lang = monitor_items[index].initLang;
+                cmdr = monitor_items[index].nickname;
             }
             else
                 lang = allArgs[1];
@@ -320,14 +321,15 @@ namespace adiIRC_DeepL_plugin_test
             string totranslate = allArgs[2];
             deepl_translation translation = await deepl_translate(lang, totranslate);
 
-            if (translation != null)
-            {  //translation failure
+            if (translation != null) //if not translation failure
+            {  
 
                 string translationText = translation.text;
                 if (!string.IsNullOrEmpty(cmdr))
                     translationText = cmdr + ", " + translationText;
                 argument.Window.Editbox.Text = translationText;
 
+                //do a reverse translation back into user's native language
                 deepl_translation reverseTranslation = null;
                 if (reverseTranslate)
                 {
@@ -375,6 +377,7 @@ namespace adiIRC_DeepL_plugin_test
                     if (IsMonitored(target, out index))
                     {
                         monitor_items[index].langcode = newLang;
+                        monitor_items[index].initLang = newLang;
                     }
                     else
                         adihost.ActiveIWindow.OutputText("Warning: Could not find '" + target + "' in monitor list.");

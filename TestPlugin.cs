@@ -38,7 +38,7 @@ namespace adiIRC_DeepL_plugin_test
 
     public class monitorItem
     {
-        public string nickname, cmdr, platform, langcode;  // The nickname to monitor
+        public string nickname, cmdr, platform, langcode, initLang;  // The nickname to monitor
         public int retries = 0;
 
         public monitorItem(string nickname, string cmdr, string langcode = "ZZ", string platform = "")
@@ -47,6 +47,7 @@ namespace adiIRC_DeepL_plugin_test
             this.nickname = nickname;
             this.cmdr = cmdr;
             this.langcode = langcode;
+            this.initLang = langcode;
             this.platform = platform; //for future use, maybe
         }
     }
@@ -311,7 +312,7 @@ namespace adiIRC_DeepL_plugin_test
             int index;
             if (IsMonitored(allArgs[1], out index))
             {
-                lang = monitor_items[index].langcode;
+                lang = monitor_items[index].initLang;
                 cmdr = monitor_items[index].nickname;
             }
             else

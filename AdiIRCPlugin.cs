@@ -51,7 +51,7 @@
     {
         public string apikey, native_lang, api_endpoint;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
-        public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
+        public bool removePartingNicknames, reverseTranslate; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
 
         public deepl_config_items()
@@ -62,6 +62,7 @@
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
             api_endpoint = "api-free.deepl.com";
+            reverseTranslate = false;
         }
     }
 
@@ -81,7 +82,7 @@
         private string deepl_config_file;
         private deepl_config_items config_items;
         private List<monitorItem> monitor_items;
-        private static bool drillmode = false, debugmode = false, reverseTranslate = false;
+        private static bool drillmode = false, debugmode = false;
         private const string NO_LANG = "ZZ"; // AKA: Translate as an unknown language
         private ITools tools;
 
@@ -195,10 +196,9 @@
                             return null;
                     }
 
-                    deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
                     try
                     {
-                        jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
+                        deepl_json_response jsonResponse = JsonConvert.DeserializeObject<deepl_json_response>(responseContent);
                         if (response.IsSuccessStatusCode)
                         {
                             // If the sourceLang was incorrect, toTranslate and the translation will be the same, re-run the translation with no langcode
@@ -220,18 +220,9 @@
                     }
                     catch (Exception e)
                     {
-                        adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to parse DeepL API Response. See: " + adihost.ConfigFolder + "\\deepl_debug.log");
-                        try
-                        {
-                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + String.Format(" - Translation text: {0} | Source Lang: {1} | Target Lang: {2}", totranslate, sourceLang, lang));
-                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + responseContent);
-                            System.IO.File.WriteAllText(adihost.ConfigFolder + "deepl_debug.log", DateTime.Now.ToString() + " - " + e.Message);
-                        }
-                        catch (Exception f)
-                        {
-                            adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to write to debug log.");
-                            adihost.ActiveIWindow.OutputText(f.ToString());
-                        }
+                        adihost.ActiveIWindow.OutputText("DeepL Plugin: Failed to parse translation response. General error. See /rawlog");
+                        tools.Debug(e.ToString());
+                        tools.Debug("HTTP Response: " + responseContent);
                     }
                 }
             }
@@ -323,7 +314,7 @@
                 argument.Window.Editbox.Text = translationText;
 
                 deepl_translation reverseTranslation = null;
-                if (reverseTranslate)
+                if (config_items.reverseTranslate)
                 {
                     reverseTranslation = await deepl_translate(config_items.native_lang, translation.text, lang);
                     argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
@@ -465,9 +456,9 @@
 
             if (allarguments[1].Equals("reverseTranslate"))
             {
-                reverseTranslate = !reverseTranslate;
+                config_items.reverseTranslate = !config_items.reverseTranslate;
                 // print drillmode state after switch
-                if (reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
+                if (config_items.reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
                 else adihost.ActiveIWindow.OutputText("Reverse Translation Disabled.");
 
                 save_config_items();
@@ -558,7 +549,7 @@
             adihost.ActiveIWindow.OutputText("Monitored Channels: " + monitoredChannels);
             adihost.ActiveIWindow.OutputText("Excluded Languages: " + excludedLangs);
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
-            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
+            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + config_items.reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
             adihost.ActiveIWindow.OutputText("Debugmode: " + debugmode);
         }

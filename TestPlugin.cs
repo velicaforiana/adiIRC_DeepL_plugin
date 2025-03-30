@@ -55,7 +55,7 @@ namespace adiIRC_DeepL_plugin_test
     {
         public string apikey, native_lang, api_endpoint;    // Api Key sent with all deepl calls
         public List<string> lang_no_translation;  // List of language codes skip when adding new nicks to monitoring
-        public bool removePartingNicknames; // Whether or not to autoremove monitored nicknames that leave the channel.
+        public bool removePartingNicknames, reverseTranslate; // Whether or not to autoremove monitored nicknames that leave the channel.
         public List<string> channel_monitor_items;
 
         public deepl_config_items()
@@ -66,6 +66,7 @@ namespace adiIRC_DeepL_plugin_test
             lang_no_translation = new List<string>();
             channel_monitor_items = new List<string>();
             api_endpoint = "api-free.deepl.com";
+            reverseTranslate = false;
         }
     }
 
@@ -85,7 +86,7 @@ namespace adiIRC_DeepL_plugin_test
         private string deepl_config_file;
         public deepl_config_items config_items;
         public List<monitorItem> monitor_items;
-        public static bool drillmode = false, debugmode = false, reverseTranslate = false;
+        public static bool drillmode = false, debugmode = false;
         public const string NO_LANG = "ZZ";
 
         /// <summary>
@@ -331,14 +332,14 @@ namespace adiIRC_DeepL_plugin_test
 
                 //do a reverse translation back into user's native language
                 deepl_translation reverseTranslation = null;
-                if (reverseTranslate)
+                if (config_items.reverseTranslate)
                 {
                     reverseTranslation = await deepl_translate(config_items.native_lang, translation.text, lang);
                     argument.Window.OutputText("Reverse Translation: " + reverseTranslation.text);
                 }
 
                 // TEST PURPOSES ONLY
-                if (reverseTranslate && reverseTranslation != null)
+                if (config_items.reverseTranslate && reverseTranslation != null)
                     return translation.text + "|" + reverseTranslation.text;
 
                 // TEST PURPOSES ONLY
@@ -474,9 +475,9 @@ namespace adiIRC_DeepL_plugin_test
 
             if (allarguments[1].Equals("reverseTranslate"))
             {
-                reverseTranslate = !reverseTranslate;
+                config_items.reverseTranslate = !config_items.reverseTranslate;
                 // print drillmode state after switch
-                if (reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
+                if (config_items.reverseTranslate) adihost.ActiveIWindow.OutputText("/dl-any will be reverse translated.");
                 else adihost.ActiveIWindow.OutputText("Reverse Translation Disabled.");
 
                 save_config_items();
@@ -567,7 +568,7 @@ namespace adiIRC_DeepL_plugin_test
             adihost.ActiveIWindow.OutputText("Monitored Channels: " + monitoredChannels);
             adihost.ActiveIWindow.OutputText("Excluded Languages: " + excludedLangs);
             adihost.ActiveIWindow.OutputText("AutoRemoveNick: " + config_items.removePartingNicknames);
-            adihost.ActiveIWindow.OutputText("ReverseTranslate: " + reverseTranslate);
+            adihost.ActiveIWindow.OutputText("reverseTranslate: " + config_items.reverseTranslate);
             adihost.ActiveIWindow.OutputText("Drillmode: " + drillmode);
             adihost.ActiveIWindow.OutputText("Debugmode: " + debugmode);
         }

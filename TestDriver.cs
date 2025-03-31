@@ -69,7 +69,7 @@ namespace adiIRC_DeepL_plugin_test
 
             // Test Xbox RSignal with (Offline) by cmdr name
             Console.WriteLine("\n==== Autodetect XB Offline Case ====");
-            rsig = "RATSIGNAL Case #7 Xbox – CMDR Delrat (Offline) – System: \"LHS 2191\" (Invalid system name) – Language: English (United States) (en-US) (XB_SIGNAL)";
+            rsig = "RATSIGNAL Case #7 Playstation – CMDR Delrat (Unavailable) – System: \"PRUA DRYOAE DB - Z A27 - 1\" (2,175.3 LY \"East\" of Sol) – Language: Spanish (Spain) (es-ES) (PS_SIGNAL)";
             // Create example mecha rsig message
             ratsignal = new ChannelNormalMessageArgs(rsig, fuelratsChan);
             ratsignal.User.Nick = "MechaSqueak[BOT]";
@@ -79,7 +79,7 @@ namespace adiIRC_DeepL_plugin_test
             if (testPlugin.monitor_items[7] != null &&
                 testPlugin.monitor_items[7].nickname.Equals("Delrat")) testResult = true;
             else testResult = false;
-            PrintTestResult("XBox Rsig Autodetect", testResult);
+            PrintTestResult("PS Rsig Autodetect", testResult);
 
 
 

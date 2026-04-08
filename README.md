@@ -155,7 +155,7 @@ Clears all currently monitored users and channels.
 --  
 **/dl-set**
 ```
-/dl-rm <option>
+/dl-set <option>
 Options:
   exclude <langcode>  -> (config) add language to list that should not be auto-translated
   native <langcode>   -> (config) change native langauge (default: EN)
